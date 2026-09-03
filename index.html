@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>공유압 마스터</title>
+<!-- 수업용 「모두 같은 문제」 — 다른 공용 스크립트보다 먼저 -->
+<script src="https://hongyul67-cpu.github.io/links/fixorder.js"></script>
+<style>
+  :root{
+    --bg:#f5f6f8; --card:#fff; --line:#e2e5ea; --tx:#1c2430; --dim:#6b7684;
+    --pri:#2563eb; --ok:#12a150; --no:#e5484d; --warn:#f5a524;
+    --hi:#e5484d; --lo:#2f80ed;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);
+       font:15px/1.65 "Pretendard","맑은 고딕",system-ui,sans-serif}
+  .wrap{max-width:900px;margin:0 auto;padding:16px 14px 120px}
+
+  header{display:flex;align-items:baseline;gap:10px;margin:6px 0 12px;flex-wrap:wrap}
+  header h1{font-size:20px;margin:0;font-weight:800}
+  header .sub{color:var(--dim);font-size:13px}
+
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+  .tab{padding:9px 13px;border:1px solid var(--line);border-radius:999px;background:var(--card);
+       cursor:pointer;font-weight:700;font-size:14px;color:var(--dim)}
+  .tab.on{background:var(--pri);border-color:var(--pri);color:#fff}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+        padding:16px 18px;margin-bottom:12px}
+  .card h3{margin:0 0 8px;font-size:16px}
+  .card .body{color:#333;overflow-wrap:anywhere}
+  .kw{background:#eef4ff;color:#1d4ed8;border-radius:6px;padding:1px 6px;font-weight:700}
+
+  .btn{border:1px solid var(--line);background:var(--card);border-radius:10px;
+       padding:10px 16px;font-weight:700;cursor:pointer;font-size:14px;color:var(--tx)}
+  .btn-primary{background:var(--pri);border-color:var(--pri);color:#fff}
+  .btn-ghost{background:#f2f4f7}
+  .btn:disabled{opacity:.5;cursor:default}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+  .qnum{color:var(--dim);font-size:13px;font-weight:700}
+  .qtext{font-size:17px;font-weight:700;margin:6px 0 12px;line-height:1.5}
+  .choice{display:block;width:100%;text-align:left;border:1px solid var(--line);background:var(--card);
+          border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;font-size:15px;color:var(--tx)}
+  .choice:hover{border-color:var(--pri)}
+  .choice.correct{border-color:var(--ok);background:#eafaf1}
+  .choice.wrong{border-color:var(--no);background:#fdeeee}
+  .choice.picked{border-width:2px}
+  .explain{background:#f8fafc;border-left:3px solid var(--pri);border-radius:0 8px 8px 0;
+           padding:10px 14px;margin-top:10px;color:#334}
+  .progress{height:8px;background:#e8ebf0;border-radius:99px;overflow:hidden;margin:10px 0 16px}
+  .progress > i{display:block;height:100%;background:var(--pri);width:0;transition:width .25s}
+
+  .empty{color:var(--dim);text-align:center;padding:34px 10px}
+  .score{font-size:34px;font-weight:900;letter-spacing:-1px}
+  .muted{color:var(--dim);font-size:13px}
+  .pill{display:inline-block;background:#eef1f5;border-radius:99px;padding:2px 10px;
+        font-size:12px;font-weight:700;color:var(--dim)}
+  .pill.ok{background:#eafaf1;color:#0d7a3c}
+
+  /* ── 기호 ── */
+  svg.sym{width:100%;height:auto;display:block;color:var(--tx)}
+  .symgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .symcell{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:10px 8px 8px;text-align:center}
+  .symcell .box{height:70px;display:flex;align-items:center;justify-content:center}
+  .symcell .nm{font-weight:800;font-size:13.5px;margin-top:6px}
+  .symcell .nt{color:var(--dim);font-size:11.5px;line-height:1.4;margin-top:2px}
+  .symcell .wy{color:#41506b;font-size:12px;line-height:1.5;margin-top:6px;text-align:left}
+  .catbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .catbar button{padding:6px 11px;border:1px solid var(--line);border-radius:999px;background:var(--card);
+                 font-size:12.5px;font-weight:700;cursor:pointer;color:var(--dim)}
+  .catbar button.on{background:var(--tx);border-color:var(--tx);color:#fff}
+
+  /* 배우기 안의 그림 */
+  .fig{margin:12px 0;padding:10px;background:#fbfcfe;border:1px solid var(--line);border-radius:10px;
+       display:flex;justify-content:center;color:var(--tx)}
+  .fig svg{width:100%;height:auto;max-width:100%}
+  .learnsyms{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px;margin-top:12px}
+  .learnsyms .ls{border:1px solid var(--line);border-radius:10px;padding:6px;text-align:center;background:#fbfcfe}
+  .learnsyms .ls .box{height:52px;display:flex;align-items:center;justify-content:center}
+  .learnsyms .ls span{font-size:11.5px;font-weight:700;line-height:1.35;display:block;margin-top:4px}
+  table.cmp{width:100%;border-collapse:collapse;margin:10px 0;font-size:13.5px}
+  table.cmp th,table.cmp td{border:1px solid var(--line);padding:6px 8px;text-align:left}
+  table.cmp th{background:#f2f5fa}
+  .unitnav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .unitnav button{padding:6px 11px;border:1px solid var(--line);border-radius:999px;background:var(--card);
+                  font-size:12.5px;font-weight:700;cursor:pointer;color:var(--dim)}
+  .unitnav button.on{background:var(--pri);border-color:var(--pri);color:#fff}
+
+  /* ── 기호 게임 ── */
+  .symq{display:flex;justify-content:center;padding:6px;margin-bottom:10px}
+  .symq svg{max-width:230px;color:var(--tx)}
+  .combo{font-weight:900;color:var(--warn)}
+
+  /* ── 회로 실습 ── */
+  svg.circuit{width:100%;height:auto;display:block;color:var(--tx);max-height:60vh}
+  svg.circuit .body{stroke:currentColor;stroke-width:2.4;fill:none}
+  svg.circuit .piston{fill:currentColor}
+  svg.circuit .rod{stroke:currentColor;stroke-width:6;stroke-linecap:round}
+  svg.circuit .spring{stroke:#9aa4b2;stroke-width:1.8;fill:none}
+  svg.circuit .pipe{stroke:#b6bdc7;stroke-width:3.4;fill:none;stroke-linecap:round}
+  svg.circuit .pipe.hi{stroke:var(--hi)}
+  svg.circuit .pipe.lo{stroke:var(--lo);stroke-dasharray:7 5}
+  svg.circuit .slotbox{fill:#f4f7fc;stroke:#9db2d6;stroke-width:2;stroke-dasharray:6 5}
+  svg.circuit .slotbox.picked{fill:none;stroke:#c9d3e2;stroke-dasharray:none}
+  svg.circuit .slot.on .slotbox{stroke:var(--pri);fill:#e8f0ff}
+  svg.circuit .slot{cursor:pointer}
+  svg.circuit .slothint{fill:#7286a8;font-weight:700}
+  svg.circuit .lbl{fill:var(--dim);font-weight:700}
+  .palette{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px;margin-top:8px}
+  .part{border:1px solid var(--line);border-radius:10px;background:var(--card);padding:8px 6px;cursor:pointer;text-align:center}
+  .part.on{border-color:var(--pri);border-width:2px;background:#eef4ff}
+  .part .box{height:46px;display:flex;align-items:center;justify-content:center;color:var(--tx)}
+  .part span{font-size:11.5px;font-weight:700;line-height:1.35;display:block;margin-top:3px}
+  .missionbar{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px}
+  .missionbar button{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--card);
+                     font-weight:800;cursor:pointer;color:var(--dim);font-size:13px}
+  .missionbar button.on{background:var(--pri);border-color:var(--pri);color:#fff}
+  .missionbar button.done{background:#eafaf1;border-color:#8fd7ae;color:#0d7a3c}
+  .verdict{border-radius:10px;padding:11px 14px;margin-top:10px;font-size:14px;line-height:1.6}
+  .verdict.ok{background:#eafaf1;border:1px solid #8fd7ae;color:#0d5c31}
+  .verdict.no{background:#fff5f5;border:1px solid #f3b6b6;color:#8a2a2a}
+  .linkcard{display:block;border:1px solid var(--line);border-radius:12px;background:#fbfcfe;
+            padding:12px 14px;text-decoration:none;color:var(--tx)}
+  .linkcard b{color:var(--pri)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>공유압 마스터</h1>
+    <span class="sub" id="hdSub"></span>
+  </header>
+
+  <div class="tabs">
+    <button class="tab on" data-view="learn">📖 배우기</button>
+    <button class="tab"    data-view="atlas">🔣 기호 도감</button>
+    <button class="tab"    data-view="symgame">🎯 기호 맞히기</button>
+    <button class="tab"    data-view="circuit">🔧 회로 실습</button>
+    <button class="tab"    data-view="practice">✏️ 연습 8문항</button>
+    <button class="tab"    data-view="exam">🏁 종합시험 20문항</button>
+    <button class="tab"    data-view="wrong">📕 오답노트</button>
+  </div>
+
+  <div id="view"></div>
+</div>
+
+<script src="symbols.js"></script>
+<script src="learn.js"></script>
+<script src="quiz.js"></script>
+<script src="circuit.js"></script>
+<script>
+/* ══════════════════════════════════════════════════════════════
+   공유압 마스터 — 화면
+   규약 : https://github.com/hongyul67-cpu/links/blob/master/CONVENTIONS.md
+   내용을 고칠 곳은 symbols.js · learn.js · quiz.js · circuit.js 입니다.
+   ══════════════════════════════════════════════════════════════ */
+'use strict';
+
+var CFG = {
+  practiceN : 8,
+  examN     : 20,
+  symGameN  : 12,
+  storeKey  : 'pneumatic-master_v1',
+  toolName  : '공유압 마스터'
+};
+
+var $  = function (s) { return document.querySelector(s); };
+var el = function (h) { var d = document.createElement('div'); d.innerHTML = h.trim(); return d.firstElementChild; };
+var esc = function (s) { return String(s).replace(/[&<>]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]; }); };
+function shuffle(a) { return a.map(function (v) { return [Math.random(), v]; })
+  .sort(function (x, y) { return x[0] - y[0]; }).map(function (v) { return v[1]; }); }
+
+var ST = load();
+function load() {
+  try { return Object.assign({ wrong: [], missions: {} }, JSON.parse(localStorage.getItem(CFG.storeKey) || '{}')); }
+  catch (e) { return { wrong: [], missions: {} }; }
+}
+function save() { try { localStorage.setItem(CFG.storeKey, JSON.stringify(ST)); } catch (e) {} }
+
+var quiz = null, lastResult = null;
+
+document.querySelectorAll('.tab').forEach(function (t) {
+  t.onclick = function () {
+    document.querySelectorAll('.tab').forEach(function (x) { x.classList.remove('on'); });
+    t.classList.add('on');
+    render(t.dataset.view);
+  };
+});
+function goTab(v) { var b = document.querySelector('[data-view="' + v + '"]'); if (b) b.click(); }
+
+function render(view) {
+  stopSim();
+  var v = $('#view'); v.innerHTML = '';
+  if (view === 'learn')    return renderLearn(v);
+  if (view === 'atlas')    return renderAtlas(v);
+  if (view === 'symgame')  return startSymGame(v);
+  if (view === 'circuit')  return renderCircuit(v);
+  if (view === 'practice') return startQuiz(v, 'practice');
+  if (view === 'exam')     return startQuiz(v, 'exam');
+  if (view === 'wrong')    return renderWrong(v);
+}
+
+/* ══ 배우기 ══════════════════════════════════════════════ */
+var learnUnit = 0;
+function renderLearn(v) {
+  var nav = el('<div class="unitnav"></div>');
+  LEARN_UNITS.forEach(function (u, i) {
+    var b = el('<button' + (i === learnUnit ? ' class="on"' : '') + '>' + esc(u) + '</button>');
+    b.onclick = function () { learnUnit = i; render('learn'); window.scrollTo(0, 0); };
+    nav.appendChild(b);
+  });
+  v.appendChild(nav);
+
+  var unit = LEARN_UNITS[learnUnit];
+  LEARN.filter(function (c) { return c.unit === unit; }).forEach(function (c) {
+    var card = el('<div class="card"><span class="pill">' + esc(c.unit) + '</span>' +
+      '<h3>' + esc(c.t) + '</h3><div class="body">' + c.body + '</div></div>');
+    if (c.syms.length) {
+      var g = el('<div class="learnsyms"></div>');
+      c.syms.forEach(function (id) {
+        var s = SYM_BY_ID[id]; if (!s) return;
+        g.appendChild(el('<div class="ls"><div class="box">' + s.svg + '</div><span>' + esc(s.name) +
+          (s.note ? '<br><small style="color:#6b7684;font-weight:600">' + esc(s.note) + '</small>' : '') +
+          '</span></div>'));
+      });
+      card.appendChild(g);
+    }
+    v.appendChild(card);
+  });
+
+  var last = learnUnit >= LEARN_UNITS.length - 1;
+  var foot = el('<div class="card row"><b>' + (last ? '다 읽었으면' : '이 단원을 다 읽었으면') + '</b></div>');
+  if (!last) {
+    var nb = el('<button class="btn btn-primary">다음 단원 →</button>');
+    nb.onclick = function () { learnUnit++; render('learn'); window.scrollTo(0, 0); };
+    foot.appendChild(nb);
+  }
+  var ab = el('<button class="btn">🔣 기호 도감 보기</button>');
+  ab.onclick = function () { goTab('atlas'); };
+  var gb = el('<button class="btn' + (last ? ' btn-primary' : '') + '">🎯 기호 맞히기</button>');
+  gb.onclick = function () { goTab('symgame'); };
+  foot.appendChild(ab); foot.appendChild(gb);
+  v.appendChild(foot);
+}
+
+/* ══ 기호 도감 ═══════════════════════════════════════════ */
+var atlasCat = '전체';
+function renderAtlas(v) {
+  v.appendChild(el('<div class="card"><h3>🔣 KS 공유압 기호 도감</h3>' +
+    '<div class="body">기호 ' + SYMBOLS.length + '개를 묶음별로 모았다. 여기서는 <b>답을 다 보여 준다.</b> ' +
+    '충분히 본 뒤에 기호 맞히기로 넘어가라.<br>' +
+    '<span class="muted">KS B 0054 / ISO 1219-1 의 도시 규칙에 따라 직접 그린 기호다.</span></div></div>'));
+
+  var bar = el('<div class="catbar"></div>');
+  ['전체'].concat(SYM_CATS).forEach(function (c) {
+    var b = el('<button' + (c === atlasCat ? ' class="on"' : '') + '>' + esc(c) + '</button>');
+    b.onclick = function () { atlasCat = c; render('atlas'); };
+    bar.appendChild(b);
+  });
+  v.appendChild(bar);
+
+  var list = SYMBOLS.filter(function (s) { return atlasCat === '전체' || s.cat === atlasCat; });
+  var grid = el('<div class="symgrid"></div>');
+  list.forEach(function (s) {
+    grid.appendChild(el('<div class="symcell"><div class="box">' + s.svg + '</div>' +
+      '<div class="nm">' + esc(s.name) + '</div>' +
+      (s.note ? '<div class="nt">' + esc(s.note) + '</div>' : '') +
+      '<div class="wy">' + esc(s.why) + '</div></div>'));
+  });
+  v.appendChild(grid);
+}
+
+/* ══ 기호 맞히기 ═════════════════════════════════════════
+   연습 성격이다 — 고르는 즉시 정답과 설명을 보여 준다. */
+var sg = null;
+function startSymGame(v) {
+  /* 같은 명칭이 여러 개인 기호(예: 단동 실린더)는 비고까지 붙여 한 값만 가리키게 한다 */
+  function label(s) {
+    var same = SYMBOLS.filter(function (o) { return o.name === s.name; }).length > 1;
+    return s.name + (same && s.note ? ' — ' + s.note : '');
+  }
+  var pool = shuffle(SYMBOLS.slice()).slice(0, CFG.symGameN);
+  sg = { i: 0, correct: 0, combo: 0, best: 0, list: pool, picks: [], start: Date.now(), label: label };
+  drawSym(v);
+}
+function drawSym(v) {
+  var s = sg.list[sg.i];
+  var wrongs = shuffle(SYMBOLS.filter(function (o) {
+    return o.id !== s.id && sg.label(o) !== sg.label(s);
+  })).slice(0, 3);
+  var opts = shuffle([s].concat(wrongs));
+
+  v.innerHTML = '';
+  v.appendChild(el('<div class="progress"><i style="width:' + (sg.i / sg.list.length * 100) + '%"></i></div>'));
+  var card = el('<div class="card">' +
+    '<div class="qnum">' + (sg.i + 1) + ' / ' + sg.list.length +
+    ' <span class="pill" style="margin-left:6px">' + sg.correct + '개 맞힘</span>' +
+    (sg.combo > 1 ? ' <span class="combo">🔥 ' + sg.combo + '연속</span>' : '') + '</div>' +
+    '<div class="qtext">이 기호의 명칭은?</div>' +
+    '<div class="symq">' + s.svg + '</div><div id="chs"></div><div id="exp"></div></div>');
+  v.appendChild(card);
+
+  var chs = card.querySelector('#chs');
+  opts.forEach(function (o, idx) {
+    var b = el('<button class="choice">' + (idx + 1) + '. ' + esc(sg.label(o)) + '</button>');
+    b.onclick = function () { pickSym(v, o, s, b, opts, idx); };
+    chs.appendChild(b);
+  });
+}
+function pickSym(v, picked, ans, btn, opts, idx) {
+  var ok = picked.id === ans.id;
+  sg.picks.push({ s: ans, pick: picked, ok: ok });
+  if (ok) { sg.correct++; sg.combo++; if (sg.combo > sg.best) sg.best = sg.combo; }
+  else {
+    sg.combo = 0;
+    pushWrong({ unit: '기호 — ' + ans.cat, q: '이 기호의 명칭은? (' + ans.cat + ')',
+      ch: opts.map(function (o) { return sg.label(o); }),
+      a: opts.indexOf(ans), pick: idx, ex: ans.why, svg: ans.svg });
+  }
+  document.querySelectorAll('.choice').forEach(function (b, i) {
+    b.disabled = true;
+    if (opts[i].id === ans.id) b.classList.add('correct');
+    if (i === idx) b.classList.add('picked', ok ? 'correct' : 'wrong');
+  });
+  try { if (window.FX) ok ? FX.ok(btn) : FX.no(btn); } catch (e) { console.warn('FX', e); }
+
+  var exp = document.querySelector('#exp');
+  exp.appendChild(el('<div class="explain"><b>' + (ok ? '맞았습니다' : '정답은 ' + (opts.indexOf(ans) + 1) + '번') +
+    ' — ' + esc(sg.label(ans)) + '</b><br>' + esc(ans.why) + '</div>'));
+  var next = el('<div class="row" style="margin-top:12px"><button class="btn btn-primary">' +
+    (sg.i + 1 >= sg.list.length ? '결과 보기' : '다음 기호 →') + '</button></div>');
+  exp.appendChild(next);
+  next.querySelector('button').onclick = function () {
+    sg.i++;
+    if (sg.i >= sg.list.length) return finishSym(v);
+    drawSym(v);
+  };
+}
+function finishSym(v) {
+  var n = sg.list.length, pct = Math.round(sg.correct / n * 100);
+  var sec = Math.round((Date.now() - sg.start) / 1000);
+  v.innerHTML = '';
+  v.appendChild(el('<div class="card" style="text-align:center"><div class="score">' + pct + '점</div>' +
+    '<div class="muted">' + n + '개 중 ' + sg.correct + '개 정답 · 최고 ' + sg.best + '연속 · ' +
+    Math.floor(sec / 60) + '분 ' + (sec % 60) + '초</div>' +
+    '<div id="rankBox" style="margin-top:12px"></div>' +
+    '<div id="rSubmitAnchor" style="margin-top:12px"></div></div>'));
+
+  var bad = sg.picks.filter(function (p) { return !p.ok; });
+  if (bad.length) {
+    v.appendChild(el('<div class="card"><h3>📕 틀린 기호</h3></div>'));
+    bad.forEach(function (p) {
+      v.appendChild(el('<div class="card"><span class="pill">' + esc(p.s.cat) + '</span>' +
+        '<div class="symq">' + p.s.svg + '</div>' +
+        '<div class="muted">내가 고른 답 : ' + esc(sg.label(p.pick)) + '</div>' +
+        '<div style="color:var(--ok);font-weight:700">정답 : ' + esc(sg.label(p.s)) + '</div>' +
+        '<div class="explain">' + esc(p.s.why) + '</div></div>'));
+    });
+  }
+  mountSubmit(pct, sg.correct, n, sec, '기호 맞히기',
+    bad.map(function (p) { return sg.label(p.s) + ' 를 ' + sg.label(p.pick) + ' 로 고름'; }),
+    ['공유압 기호 판독']);
+  celebrate(pct, '기호 맞히기');
+
+  var again = el('<div class="card row"><button class="btn">🔁 다시 풀기</button>' +
+    '<button class="btn btn-primary">🔧 회로 실습으로</button></div>');
+  again.children[0].onclick = function () { startSymGame($('#view')); };
+  again.children[1].onclick = function () { goTab('circuit'); };
+  v.appendChild(again);
+}
+
+/* ══ 회로 실습 ═══════════════════════════════════════════ */
+var C = window.CIRCUIT;
+var cs = null, raf = null;
+
+function renderCircuit(v) {
+  if (!cs) cs = { mi: 0, parts: {}, armed: null, pos: 0, target: 0, pA: 'off', pB: 'off',
+                  supply: 'hi', pilot: 'off', b1: false, b2: false, running: false, verdict: null, startAt: Date.now() };
+  cs.armed = null;
+  var m = C.MISSIONS[cs.mi];
+
+  v.appendChild(el('<div class="card"><h3>🔧 회로 실습 — 조립하고 돌려 본다</h3>' +
+    '<div class="body">부품을 고른 다음 도면의 <b>점선 자리</b>를 눌러 넣는다. ' +
+    '[▶ 운전] 을 누르면 <b>넣은 부품 그대로</b> 움직인다. 틀린 부품을 넣어도 그대로 움직이니 ' +
+    '무엇이 잘못됐는지 눈으로 보라.</div></div>'));
+
+  var bar = el('<div class="missionbar"></div>');
+  C.MISSIONS.forEach(function (mm, i) {
+    var cls = i === cs.mi ? 'on' : (ST.missions[mm.id] ? 'done' : '');
+    var b = el('<button class="' + cls + '">' + mm.id + '</button>');
+    b.onclick = function () { cs.mi = i; resetMission(); render('circuit'); };
+    bar.appendChild(b);
+  });
+  v.appendChild(bar);
+
+  var done = Object.keys(ST.missions).length;
+  v.appendChild(el('<div class="card"><span class="pill' + (ST.missions[m.id] ? ' ok' : '') + '">과제 ' + m.id + ' / ' +
+    C.MISSIONS.length + (ST.missions[m.id] ? ' · 해결함' : '') + '</span>' +
+    '<h3>' + esc(m.title) + '</h3><div class="body">' + esc(m.goal) + '</div></div>'));
+
+  var host = el('<div class="card"><div id="scene"></div><div id="ctrls" class="row" style="margin-top:10px"></div>' +
+    '<div id="verdict"></div></div>');
+  v.appendChild(host);
+
+  var pal = el('<div class="card"><h3>부품 상자</h3><div class="muted">부품을 누른 뒤, 도면의 점선 자리를 누르세요.</div></div>');
+  m.slots.forEach(function (slot) {
+    pal.appendChild(el('<div style="margin-top:10px;font-weight:800;font-size:13.5px">' + esc(slot.label) + '</div>'));
+    var g = el('<div class="palette"></div>');
+    slot.pick.forEach(function (pid) {
+      var p = C.PARTS[pid];
+      var cell = el('<button type="button" class="part' + (cs.parts[slot.key] === pid ? ' on' : '') +
+        '" data-part="' + pid + '" data-slot="' + slot.key + '">' +
+        '<div class="box">' + (p.sym ? SYM_BY_ID[p.sym].svg : '<span style="color:#9aa4b2">—</span>') + '</div>' +
+        '<span>' + esc(p.n) + '</span></button>');
+      cell.onclick = function () { armPart(pid, slot.key); };
+      g.appendChild(cell);
+    });
+    pal.appendChild(g);
+  });
+  var hintBtn = el('<div class="row" style="margin-top:12px"><button class="btn btn-ghost">💡 힌트</button></div>');
+  hintBtn.children[0].onclick = function () {
+    hintBtn.appendChild(el('<div class="explain" style="width:100%">' + esc(m.hint) + '</div>'));
+    hintBtn.children[0].disabled = true;
+  };
+  pal.appendChild(hintBtn);
+  v.appendChild(pal);
+
+  if (done >= C.MISSIONS.length) {
+    var fin = el('<div class="card" style="text-align:center"><h3>🎉 과제 ' + C.MISSIONS.length + '개를 모두 해결했습니다</h3>' +
+      '<div id="rankBox"></div><div id="rSubmitAnchor" style="margin-top:10px"></div></div>');
+    v.appendChild(fin);
+    mountSubmit(100, C.MISSIONS.length, C.MISSIONS.length,
+      Math.round((Date.now() - cs.startAt) / 1000), '회로 실습', [], ['공기압 회로 조립']);
+  }
+
+  paintScene();
+  paintCtrls();
+}
+
+function armPart(pid, slotKey) {
+  cs.parts[slotKey] = pid;
+  cs.armed = null;
+  cs.verdict = null;
+  resetMotion();
+  render('circuit');
+}
+function resetMotion() {
+  cs.pos = 0; cs.target = 0; cs.pA = 'off'; cs.pB = 'off'; cs.pilot = 'off';
+  cs.b1 = false; cs.b2 = false; cs.running = false;
+  stopSim();
+}
+function resetMission() { cs.parts = {}; cs.verdict = null; resetMotion(); }
+
+function paintScene() {
+  var m = C.MISSIONS[cs.mi];
+  var host = $('#scene'); if (!host) return;
+  host.innerHTML = C.scene(m, cs.parts, cs);
+  host.querySelectorAll('.slot').forEach(function (g) {
+    g.onclick = function () {
+      var key = g.dataset.slot;
+      var slot = m.slots.filter(function (s) { return s.key === key; })[0];
+      if (!slot) return;
+      /* 자리를 누르면 그 자리의 부품 상자로 데려간다 */
+      var first = document.querySelector('.part[data-slot="' + key + '"]');
+      if (first) first.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      cs.armed = key; paintScene();
+    };
+  });
+}
+
+function paintCtrls() {
+  var m = C.MISSIONS[cs.mi];
+  var box = $('#ctrls'); if (!box) return;
+  box.innerHTML = '';
+  var ready = m.slots.every(function (s) { return cs.parts[s.key]; });
+
+  var runB = el('<button class="btn btn-primary" id="btnRun">▶ 운전</button>');
+  runB.disabled = !ready || cs.running;
+  runB.onclick = function () { runSim(); };
+  box.appendChild(runB);
+
+  if (m.layout === 'logic') {
+    [1, 2].forEach(function (n) {
+      var b = el('<button class="btn" id="btnB' + n + '">🔘 버튼 ' + n + (cs['b' + n] ? ' (누름)' : '') + '</button>');
+      b.disabled = !ready;
+      b.onclick = function () { cs['b' + n] = !cs['b' + n]; applyLogic(); paintCtrls(); paintScene(); startSim(); };
+      box.appendChild(b);
+    });
+  } else {
+    var b = el('<button class="btn" id="btnB1">🔘 버튼 ' + (cs.b1 ? '(누름)' : '(놓음)') + '</button>');
+    b.disabled = !ready;
+    b.onclick = function () { cs.b1 = !cs.b1; applyBasic(); paintCtrls(); paintScene(); startSim(); };
+    box.appendChild(b);
+  }
+
+  var rs = el('<button class="btn btn-ghost">↺ 다시 놓기</button>');
+  rs.onclick = function () { resetMission(); render('circuit'); };
+  box.appendChild(rs);
+
+  if (!ready) box.appendChild(el('<span class="muted">부품을 모두 넣으면 운전할 수 있습니다.</span>'));
+
+  var vd = $('#verdict');
+  if (vd) {
+    vd.innerHTML = cs.verdict
+      ? '<div class="verdict ' + (cs.verdict.ok ? 'ok' : 'no') + '"><b>' +
+        (cs.verdict.ok ? '✅ 과제 해결' : '❌ 과제를 만족하지 못했다') + '</b><br>' + cs.verdict.say + '</div>'
+      : '';
+  }
+}
+
+/* 신호 → 실린더 목표 위치 */
+function applyBasic() {
+  var m = C.MISSIONS[cs.mi];
+  var r = C.run(m, cs.parts);
+  var on = cs.b1;
+  if (r.inverted) on = !on;                 // 상시열림(NO)형
+  if (r.fwd === 0 && r.rev === 0) { cs.pA = 'off'; cs.pB = 'off'; return; }
+  if (on) { cs.target = 1; cs.pA = 'hi'; cs.pB = 'lo'; }
+  else {
+    if (r.rev === 0 && !r.springReturn) { cs.pA = 'off'; cs.pB = 'off'; return; }  // 되돌아올 길이 없다
+    cs.target = 0; cs.pA = 'lo'; cs.pB = r.springReturn ? 'off' : 'hi';
+  }
+}
+function applyLogic() {
+  var m = C.MISSIONS[cs.mi];
+  var r = C.run(m, cs.parts);
+  var on;
+  if (r.logicMode === 'and')      on = cs.b1 && cs.b2;
+  else if (r.logicMode === 'or')  on = cs.b1 || cs.b2;
+  else                            on = cs.b1;          // 체크 밸브 — 버튼 2 는 아무 일도 못 한다
+  cs.pilot = on ? 'hi' : 'off';
+  cs.target = on ? 1 : 0;
+  cs.pA = on ? 'hi' : 'lo';
+  cs.pB = on ? 'lo' : 'hi';
+}
+
+/* 한 프레임 나아간다. rAF 와 떼어 놓아서 그대로 불러 시험할 수 있다. */
+function advance(dt) {
+  var m = C.MISSIONS[cs.mi];
+  var r = C.run(m, cs.parts);
+  var going = cs.target > cs.pos;
+  var sp = (going ? r.fwd : r.rev) * 0.75;
+  if (going && r.jerk && cs.pos < 0.18) sp = r.fwd * 3.2;      // 급진 현상
+  if (sp > 0) {
+    if (going) cs.pos = Math.min(cs.target, cs.pos + sp * dt);
+    else       cs.pos = Math.max(cs.target, cs.pos - sp * dt);
+  }
+  var host = $('#scene');
+  if (!host) return cs.pos;
+  var lab = host.querySelector('#cLabel');
+  if (lab) lab.textContent = C.posLabel(cs.pos);
+  var p = host.querySelector('#cPiston'), rod = host.querySelector('#cRod');
+  if (p) {
+    var x = 158 + cs.pos * (210 - 26);
+    p.setAttribute('x', x);
+    if (rod) rod.setAttribute('x1', x + 10);
+    var spr = host.querySelector('.spring');
+    if (spr) {
+      var d = 'M' + (x + 10) + ' 63', i, n = 10, endx = 352;
+      for (i = 1; i <= n; i++) d += 'L' + (x + 10 + (endx - x - 10) * i / n) + ' ' + (63 + (i % 2 ? -12 : 12));
+      spr.setAttribute('d', d);
+    }
+  }
+  return cs.pos;
+}
+function startSim() {
+  stopSim();
+  var last = performance.now();
+  function step(now) {
+    advance(Math.min(0.05, (now - last) / 1000));
+    last = now;
+    raf = requestAnimationFrame(step);
+  }
+  raf = requestAnimationFrame(step);
+}
+window.advance = advance;      /* 시험용 */
+function stopSim() { if (raf) { cancelAnimationFrame(raf); raf = null; } }
+
+/* 자동 운전 — 누름 → 유지 → 놓음 을 대신 해 주고 판정한다 */
+function runSim() {
+  var m = C.MISSIONS[cs.mi];
+  var r = C.run(m, cs.parts);
+  cs.running = true; cs.verdict = null;
+  cs.pos = 0; cs.target = 0;
+  paintCtrls();
+
+  var seq = m.layout === 'logic'
+    ? [[0, function () { cs.b1 = true; cs.b2 = false; applyLogic(); }],
+       [1500, function () { cs.b1 = false; cs.b2 = true; applyLogic(); }],
+       [3000, function () { cs.b1 = true; cs.b2 = true; applyLogic(); }],
+       [4800, function () { cs.b1 = false; cs.b2 = false; applyLogic(); }]]
+    : [[0, function () { cs.b1 = true; applyBasic(); }],
+       [2200, function () { cs.b1 = false; applyBasic(); }]];
+  var endAt = m.layout === 'logic' ? 6400 : 4400;
+
+  seq.forEach(function (s) {
+    setTimeout(function () { if (!cs.running) return; s[1](); paintScene(); paintCtrls(); }, s[0]);
+  });
+  startSim();
+  setTimeout(function () {
+    if (!cs.running) return;
+    cs.running = false;
+    cs.verdict = { ok: r.ok, say: r.say };
+    if (r.ok && !ST.missions[m.id]) { ST.missions[m.id] = true; save(); }
+    if (r.ok) { try { if (window.FX) FX.banner({ title: '과제 ' + m.id + ' 해결!', sub: m.title, stars: 3 }); } catch (e) { console.warn('FX', e); } }
+    render('circuit');
+  }, endAt);
+}
+
+/* ══ 문제 풀이 ═══════════════════════════════════════════
+   연습 : 즉시 정답·해설 공개 · 점수 표시 · 연출 있음
+   종합 : 아무것도 알려주지 않음 · 점수 감춤 · 연출 없음 (규약 2) */
+function buildSet(n) {
+  return shuffle(QUESTIONS.slice()).slice(0, Math.min(n, QUESTIONS.length)).map(function (q) {
+    /* 보기 순서도 섞는다 — 정답 번호가 한쪽에 몰리지 않게 (?fix 로 수업용 고정 가능) */
+    var order = shuffle(q.ch.map(function (c, i) { return i; }));
+    return { unit: q.unit, q: q.q, ex: q.ex,
+             ch: order.map(function (i) { return q.ch[i]; }),
+             a: order.indexOf(q.a) };
+  });
+}
+function startQuiz(v, mode) {
+  var n = mode === 'exam' ? CFG.examN : CFG.practiceN;
+  quiz = { mode: mode, i: 0, correct: 0, picks: [], list: buildSet(n), start: Date.now() };
+  if (!quiz.list.length) { v.appendChild(el('<div class="empty">문항이 아직 없습니다.</div>')); return; }
+  if (mode === 'exam') {
+    v.appendChild(el('<div class="card"><h3>🏁 종합시험 ' + quiz.list.length + '문항</h3><div class="body">' +
+      '채점은 마지막에 한 번만 합니다. 푸는 동안에는 정답도 점수도 보이지 않습니다.<br>' +
+      '<span class="muted">먼저 배우기와 연습을 마치고 오세요.</span></div></div>'));
+  }
+  drawQ(v);
+}
+function drawQ(v) {
+  var q = quiz.list[quiz.i], isExam = quiz.mode === 'exam';
+  v.innerHTML = '';
+  v.appendChild(el('<div class="progress"><i style="width:' + (quiz.i / quiz.list.length * 100) + '%"></i></div>'));
+  var card = el('<div class="card"><div class="qnum">' + (quiz.i + 1) + ' / ' + quiz.list.length +
+    (isExam ? ' <span class="pill" style="margin-left:6px">채점은 마지막에</span>'
+            : ' <span class="pill" style="margin-left:6px">' + quiz.correct + '개 맞힘</span>') +
+    ' <span class="pill" style="margin-left:4px">' + esc(q.unit) + '</span></div>' +
+    '<div class="qtext">' + q.q + '</div><div id="chs"></div><div id="exp"></div></div>');
+  v.appendChild(card);
+  var chs = card.querySelector('#chs');
+  q.ch.forEach(function (c, idx) {
+    var b = el('<button class="choice">' + (idx + 1) + '. ' + c + '</button>');
+    b.onclick = function () { pick(v, idx, b); };
+    chs.appendChild(b);
+  });
+}
+function pick(v, idx, btn) {
+  var q = quiz.list[quiz.i], ok = idx === q.a;
+  quiz.picks.push({ q: q, pick: idx, ok: ok });
+  if (ok) quiz.correct++;
+  else pushWrong({ unit: q.unit, q: q.q, ch: q.ch, a: q.a, pick: idx, ex: q.ex });
+
+  if (quiz.mode === 'exam') {
+    quiz.i++;
+    if (quiz.i >= quiz.list.length) return finish(v);
+    return drawQ(v);
+  }
+  document.querySelectorAll('.choice').forEach(function (b, i) {
+    b.disabled = true;
+    if (i === q.a) b.classList.add('correct');
+    if (i === idx) b.classList.add('picked', ok ? 'correct' : 'wrong');
+  });
+  try { if (window.FX) ok ? FX.ok(btn) : FX.no(btn); } catch (e) { console.warn('FX', e); }
+  var exp = document.querySelector('#exp');
+  exp.appendChild(el('<div class="explain"><b>' + (ok ? '맞았습니다' : '정답은 ' + (q.a + 1) + '번') +
+    '</b><br>' + q.ex + '</div>'));
+  var next = el('<div class="row" style="margin-top:12px"><button class="btn btn-primary">' +
+    (quiz.i + 1 >= quiz.list.length ? '결과 보기' : '다음 문제 →') + '</button></div>');
+  exp.appendChild(next);
+  next.querySelector('button').onclick = function () {
+    quiz.i++;
+    if (quiz.i >= quiz.list.length) return finish(v);
+    drawQ(v);
+  };
+}
+function finish(v) {
+  var n = quiz.list.length, pct = Math.round(quiz.correct / n * 100);
+  var sec = Math.round((Date.now() - quiz.start) / 1000);
+  var part = quiz.mode === 'exam' ? '종합시험' : '연습';
+  v.innerHTML = '';
+  v.appendChild(el('<div class="card" style="text-align:center"><div class="score">' + pct + '점</div>' +
+    '<div class="muted">' + n + '문항 중 ' + quiz.correct + '개 정답 · ' +
+    Math.floor(sec / 60) + '분 ' + (sec % 60) + '초</div>' +
+    '<div id="rankBox" style="margin-top:12px"></div>' +
+    '<div id="rSubmitAnchor" style="margin-top:12px"></div></div>'));
+
+  var bad = quiz.picks.filter(function (p) { return !p.ok; });
+  if (bad.length) {
+    v.appendChild(el('<div class="card"><h3>📕 틀린 문제</h3></div>'));
+    bad.forEach(function (p) {
+      v.appendChild(el('<div class="card"><span class="pill">' + esc(p.q.unit) + '</span>' +
+        '<div class="qtext">' + p.q.q + '</div>' +
+        '<div class="muted">내가 고른 답 : ' + (p.pick + 1) + '. ' + p.q.ch[p.pick] + '</div>' +
+        '<div style="color:var(--ok);font-weight:700">정답 : ' + (p.q.a + 1) + '. ' + p.q.ch[p.q.a] + '</div>' +
+        '<div class="explain">' + p.q.ex + '</div></div>'));
+    });
+  }
+  /* 규약 1-② : 번호가 아니라 무엇을 틀렸는지 남긴다 (보기 순서를 섞으므로 번호는 의미가 없다) */
+  var plain = function (s) { return String(s).replace(/<[^>]+>/g, ''); };
+  mountSubmit(pct, quiz.correct, n, sec, part,
+    bad.map(function (p) {
+      return p.q.unit + ' · ' + plain(p.q.q).slice(0, 24) + '… → ' +
+        plain(p.q.ch[p.pick]).slice(0, 16) + ' 로 고름 (정답 ' + plain(p.q.ch[p.q.a]).slice(0, 16) + ')';
+    }),
+    ['공유압 회로 이해']);
+  celebrate(pct, part);
+  v.appendChild(el('<a class="linkcard" target="_blank" rel="noopener" ' +
+    'href="https://hongyul67-cpu.github.io/automation-equipment-exam/">' +
+    '<b>기출문제로 더 풀고 싶다면 →</b><br>' +
+    '<span class="muted">자동화설비기능사 필기 CBT 에 유공압 기출문항이 회차별로 들어 있다. ' +
+    '이 도구는 기출을 옮겨 오지 않았다.</span></a>'));
+}
+
+function celebrate(pct, part) {
+  try {
+    if (window.FX && pct >= 60) {
+      FX.banner({ title: pct >= 90 ? '훌륭합니다!' : '통과!', sub: part + ' ' + pct + '점',
+                  stars: FX.starsFor ? FX.starsFor(pct) : 0 });
+    }
+  } catch (e) { console.warn('FX', e); }
+  try {
+    if (window.Rank) {
+      var res = Rank.award(pct, { mode: CFG.toolName + ' — ' + part });
+      var rb = $('#rankBox'); if (rb) rb.innerHTML = Rank.resultBox(res);
+    }
+  } catch (e) { console.warn('Rank', e); }
+}
+
+/* ══ 결과 제출 (규약 1) ══════════════════════════════════ */
+function mountSubmit(pct, correct, total, sec, part, wrongList, keywords) {
+  lastResult = {
+    mode: CFG.toolName + ' — ' + part,
+    score: pct, correct: correct, total: total,
+    wrong: wrongList || [],
+    durationSec: sec
+  };
+  var anchor = $('#rSubmitAnchor');
+  if (!(window.ResultCollector && ResultCollector.attach) || !anchor) return;
+  var btn = ResultCollector.attach(anchor, function () { return lastResult; }, {
+    id: 'rcBtn', className: 'btn btn-primary',
+    mode: lastResult.mode,
+    extra: (keywords || []).concat([CFG.toolName + ' ' + part + ' ' + pct + '점'])
+  });
+  if (btn) { btn.style.width = '100%'; btn.textContent = '📤 [' + part + '] 결과 제출'; }
+}
+
+/* ══ 오답노트 ════════════════════════════════════════════ */
+function pushWrong(w) {
+  ST.wrong = ST.wrong.filter(function (x) { return x.q !== w.q; });
+  w.at = Date.now();
+  ST.wrong.unshift(w);
+  ST.wrong = ST.wrong.slice(0, 100);
+  save();
+}
+function renderWrong(v) {
+  if (!ST.wrong.length) {
+    v.appendChild(el('<div class="empty">🗒️ 아직 오답이 없어요!<br>기호 맞히기·연습·종합시험을 풀면 여기에 모입니다.</div>'));
+    return;
+  }
+  var head = el('<div class="card row"><b>' + ST.wrong.length + '개</b>' +
+    '<button class="btn" id="clrWrong">비우기</button></div>');
+  v.appendChild(head);
+  head.querySelector('#clrWrong').onclick = function () { ST.wrong = []; save(); render('wrong'); };
+  ST.wrong.forEach(function (w) {
+    v.appendChild(el('<div class="card"><span class="pill">' + esc(w.unit) + '</span>' +
+      (w.svg ? '<div class="symq">' + w.svg + '</div>' : '') +
+      '<div class="qtext">' + w.q + '</div>' +
+      '<div class="muted">내가 고른 답 : ' + (w.pick + 1) + '. ' + w.ch[w.pick] + '</div>' +
+      '<div style="color:var(--ok);font-weight:700">정답 : ' + (w.a + 1) + '. ' + w.ch[w.a] + '</div>' +
+      '<div class="explain">' + w.ex + '</div></div>'));
+  });
+}
+
+$('#hdSub').textContent = '기호 ' + SYMBOLS.length + ' · 개념 ' + LEARN.length +
+  ' · 회로 과제 ' + CIRCUIT.MISSIONS.length + ' · 문항 ' + QUESTIONS.length;
+render('learn');
+</script>
+
+<!-- 공용 위젯 — 순서 그대로 두세요 (규약 1 · 3 · 3-1) -->
+<script src="https://hongyul67-cpu.github.io/links/collector.js"  data-tool="공유압 마스터"></script>
+<script src="https://hongyul67-cpu.github.io/links/fx.js"></script>
+<script src="https://hongyul67-cpu.github.io/links/rank.js"       data-tool="공유압 마스터" data-pace="class"></script>
+<script src="https://hongyul67-cpu.github.io/links/class-mode.js"></script>
+<script src="https://hongyul67-cpu.github.io/links/reset.js"></script>
+<script src="https://hongyul67-cpu.github.io/links/backbar.js"></script>
+</body>
+</html>
