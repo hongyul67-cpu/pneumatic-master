@@ -349,6 +349,41 @@
         act('sol', 'l', 20) + act('spring', 'r', 48), '0 0 116 64'));
   }());
 
+  /* 회로 실습에서 쓰는 두 밸브 —
+     근거 : 산업인력공단 훈련교재 「공유압제어실기」
+            제3장 자동 왕복 회로 구성(전진 끝단의 리밋 밸브) ·
+            제4장 자기유지 회로 구성(메모리 밸브와 스프링 복귀 밸브의 차이) */
+  (function () {
+    var a = ap(20), b = ap(48);
+    add('v32roll', '방향제어밸브', '3/2 way 밸브', '3포트 2위치 · 롤러 조작 · 스프링복귀 (리밋 밸브)',
+      '롤러를 실린더 행정 끝에 세워 두면, 로드가 와서 롤러를 누를 때만 신호가 나간다. ' +
+      '「실린더가 정말로 거기까지 갔는가」를 알려 주는 밸브라 자동 왕복 회로에서 눈 노릇을 한다.',
+      W(sq(20) + sq(48) +
+        via(a.bl, a.tm) + blocked(a.br, false) +
+        blocked(b.bl, false) + via(b.tm, b.br) +
+        stub(55, BY + BH, 'down', '1') + stub(69, BY + BH, 'down', '3') + stub(62, BY, 'up', '2') +
+        act('roller', 'l', 20) + act('spring', 'r', 48), '0 0 122 60'));
+  }());
+
+  (function () {
+    var a = ap(20), b = ap(48);
+    add('v52mem', '방향제어밸브', '5/2 way 밸브', '5포트 2위치 · 양쪽 파일럿 조작 (메모리 밸브)',
+      '양쪽 모두 파일럿이고 <b>스프링이 없다.</b> 그래서 신호가 사라져도 밀려간 자리에 그대로 머문다 — ' +
+      '마지막 신호를 기억한다. 반대쪽에 신호를 주어야 비로소 돌아온다. ' +
+      '스프링 복귀형은 신호가 없어지면 스스로 원위치하므로 기억하지 못한다.',
+      W(sq(20) + sq(48) +
+        via(a.bm, a.tl) + via(a.tr, a.br) +
+        via(b.bm, b.tr) + via(b.tl, b.bl) +
+        stub(55, BY + BH, 'down', '') + stub(62, BY + BH, 'down', '') +
+        stub(69, BY + BH, 'down', '') +
+        stub(55, BY, 'up', '') + stub(69, BY, 'up', '') +
+        '<text x="62" y="59" font-size="9" text-anchor="middle" stroke="none" fill="currentColor" ' +
+        'font-weight="700">5 · 1 · 3</text>' +
+        '<text x="62" y="11" font-size="9" text-anchor="middle" stroke="none" fill="currentColor" ' +
+        'font-weight="700">4 · 2</text>' +
+        act('pilot', 'l', 20) + act('pilot', 'r', 48), '0 0 134 64'));
+  }());
+
   (function () {
     var a = ap(26), b = ap(54), c = ap(82);
     add('v53', '방향제어밸브', '5/3 way 밸브', '5포트 3위치 · 중립 클로즈드 센터',

@@ -450,6 +450,7 @@ function armPart(pid, slotKey) {
 function resetMotion() {
   cs.pos = 0; cs.target = 0; cs.pA = 'off'; cs.pB = 'off'; cs.pilot = 'off';
   cs.b1 = false; cs.b2 = false; cs.running = false;
+  cs.latched = false; cs.pressUp = false;
   stopSim();
 }
 function resetMission() { cs.parts = {}; cs.verdict = null; resetMotion(); }
@@ -489,6 +490,23 @@ function paintCtrls() {
       b.onclick = function () { cs['b' + n] = !cs['b' + n]; applyLogic(); paintCtrls(); paintScene(); startSim(); };
       box.appendChild(b);
     });
+  } else if (m.layout === 'hold') {
+    var go = el('<button class="btn" id="btnB1">🔘 기동</button>');
+    go.disabled = !ready;
+    go.onclick = function () { cs.b1 = true; cs.b2 = false; applyHold(); paintCtrls(); paintScene(); startSim();
+                               setTimeout(function () { cs.b1 = false; applyHold(); paintScene(); }, 400); };
+    box.appendChild(go);
+    var stp = el('<button class="btn" id="btnB2">⏹ 정지</button>');
+    stp.disabled = !ready;
+    stp.onclick = function () { cs.b2 = true; cs.b1 = false; applyHold(); paintCtrls(); paintScene(); startSim();
+                               setTimeout(function () { cs.b2 = false; applyHold(); paintScene(); }, 400); };
+    box.appendChild(stp);
+  } else if (m.layout === 'auto') {
+    var st1 = el('<button class="btn" id="btnB1">🔘 기동 (눌렀다 놓음)</button>');
+    st1.disabled = !ready;
+    st1.onclick = function () { cs.b1 = true; applyAuto(); paintCtrls(); paintScene(); startSim();
+                               setTimeout(function () { cs.b1 = false; paintScene(); }, 400); };
+    box.appendChild(st1);
   } else {
     var b = el('<button class="btn" id="btnB1">🔘 버튼 ' + (cs.b1 ? '(누름)' : '(놓음)') + '</button>');
     b.disabled = !ready;
@@ -537,10 +555,46 @@ function applyLogic() {
   cs.pB = on ? 'lo' : 'hi';
 }
 
+/* 자동 왕복 — 기동하면 전진을 유지하고, 복귀 신호가 뜨면 되돌아온다 */
+function applyAuto() {
+  var m = C.MISSIONS[cs.mi];
+  var r = C.run(m, cs.parts);
+  if (cs.b1) { cs.latched = true; }
+  if (!r.autoReturn && !cs.latched) { cs.pA = 'off'; cs.pB = 'off'; return; }
+  if (cs.latched) { cs.target = 1; cs.pA = 'hi'; cs.pB = 'lo'; }
+  else            { cs.target = 0; cs.pA = 'lo'; cs.pB = 'hi'; }
+}
+
+/* 자기유지 — 메모리 밸브면 기억하고, 스프링 복귀면 손을 놓는 순간 되돌아온다 */
+function applyHold() {
+  var m = C.MISSIONS[cs.mi];
+  var r = C.run(m, cs.parts);
+  if (r.latched) {
+    if (cs.b1) cs.latched = true;
+    if (cs.b2) cs.latched = false;
+  } else {
+    cs.latched = !!cs.b1;                 // 스프링 복귀 — 누르고 있는 동안만
+  }
+  cs.target = cs.latched ? 1 : 0;
+  cs.pA = cs.latched ? 'hi' : 'lo';
+  cs.pB = cs.latched ? 'lo' : 'hi';
+}
+
 /* 한 프레임 나아간다. rAF 와 떼어 놓아서 그대로 불러 시험할 수 있다. */
 function advance(dt) {
   var m = C.MISSIONS[cs.mi];
   var r = C.run(m, cs.parts);
+
+  /* 자동 왕복 — 복귀 신호가 뜨는 자리에서 되돌린다.
+     리밋 밸브는 「로드가 끝단에 왔는가」로, 시퀀스 밸브는 「압력이 올랐는가」로 판단한다.
+     부하 때문에 압력이 먼저 오르면 시퀀스 밸브는 끝에 닿기도 전에 되돌려 버린다. */
+  if (m.layout === 'auto' && cs.latched) {
+    var SEQ_TRIP = 0.62;
+    cs.pressUp = (r.autoReturn === 'press' && cs.pos >= SEQ_TRIP);
+    var trip = (r.autoReturn === 'pos' && cs.pos >= 0.96) || cs.pressUp;
+    if (trip) { cs.latched = false; applyAuto(); paintScene(); }
+  }
+
   var going = cs.target > cs.pos;
   var sp = (going ? r.fwd : r.rev) * 0.75;
   if (going && r.jerk && cs.pos < 0.18) sp = r.fwd * 3.2;      // 급진 현상
@@ -587,14 +641,30 @@ function runSim() {
   cs.pos = 0; cs.target = 0;
   paintCtrls();
 
-  var seq = m.layout === 'logic'
-    ? [[0, function () { cs.b1 = true; cs.b2 = false; applyLogic(); }],
-       [1500, function () { cs.b1 = false; cs.b2 = true; applyLogic(); }],
-       [3000, function () { cs.b1 = true; cs.b2 = true; applyLogic(); }],
-       [4800, function () { cs.b1 = false; cs.b2 = false; applyLogic(); }]]
-    : [[0, function () { cs.b1 = true; applyBasic(); }],
-       [2200, function () { cs.b1 = false; applyBasic(); }]];
-  var endAt = m.layout === 'logic' ? 6400 : 4400;
+  var seq, endAt;
+  if (m.layout === 'logic') {
+    seq = [[0, function () { cs.b1 = true; cs.b2 = false; applyLogic(); }],
+           [1500, function () { cs.b1 = false; cs.b2 = true; applyLogic(); }],
+           [3000, function () { cs.b1 = true; cs.b2 = true; applyLogic(); }],
+           [4800, function () { cs.b1 = false; cs.b2 = false; applyLogic(); }]];
+    endAt = 6400;
+  } else if (m.layout === 'auto') {
+    /* 눌렀다 바로 놓는다 — 그래도 계속 나가야 한다 */
+    seq = [[0, function () { cs.b1 = true; applyAuto(); }],
+           [400, function () { cs.b1 = false; }]];
+    endAt = 6000;
+  } else if (m.layout === 'hold') {
+    /* 기동 → 손 놓음 → (유지되는가) → 정지 */
+    seq = [[0, function () { cs.b1 = true; applyHold(); }],
+           [400, function () { cs.b1 = false; applyHold(); }],
+           [3200, function () { cs.b2 = true; applyHold(); }],
+           [3600, function () { cs.b2 = false; applyHold(); }]];
+    endAt = 6000;
+  } else {
+    seq = [[0, function () { cs.b1 = true; applyBasic(); }],
+           [2200, function () { cs.b1 = false; applyBasic(); }]];
+    endAt = 4400;
+  }
 
   seq.forEach(function (s) {
     setTimeout(function () { if (!cs.running) return; s[1](); paintScene(); paintCtrls(); }, s[0]);

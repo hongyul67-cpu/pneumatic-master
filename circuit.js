@@ -29,7 +29,17 @@
     'silencer': { n: '소음기',              sym: 'silencer' },
     'shuttleHi':{ n: '셔틀 밸브 (고압 우선형)', sym: 'shuttle-hi' },
     'shuttleLo':{ n: '셔틀 밸브 (저압 우선형)', sym: 'shuttle-lo' },
-    'chk':      { n: '체크 밸브',            sym: 'chk' }
+    'chk':      { n: '체크 밸브',            sym: 'chk' },
+
+    /* 자동 왕복 · 자기유지 (훈련교재 「공유압제어실기」 제3~4장) */
+    'limitV':   { n: '리밋 밸브 (롤러 조작 3/2)', sym: 'v32roll' },
+    'seqV':     { n: '시퀀스 밸브 (압력으로 검출)', sym: 'sequence' },
+    'v52mem':   { n: '5/2 way 메모리 밸브 (양쪽 파일럿)', sym: 'v52mem' },
+
+    /* 유압 속도 제어 (훈련교재 「공유압제어실기」 Ⅱ부 제2장) */
+    'metIn':    { n: '일방향 유량 조절 밸브 — 실린더로 들어가는 쪽', sym: 'flowctl-one' },
+    'metOut2':  { n: '일방향 유량 조절 밸브 — 실린더에서 나오는 쪽', sym: 'flowctl-one' },
+    'bleed':    { n: '유량 조절 밸브 — 펌프 토출부에 병렬로',        sym: 'flowctl' }
   };
 
   /* ── 과제 ─────────────────────────────────────────────── */
@@ -109,6 +119,70 @@
       ],
       need: { logic: 'shuttleLo' },
       hint: '두 입구에 모두 압력이 걸려야 통하는 밸브가 있다. 그때 나가는 것은 높은 쪽 압력이 아니다.'
+    },
+
+    /* ── 공압 심화 ── 근거 : 훈련교재 「공유압제어실기」 Ⅰ부 제3·4장 ── */
+    {
+      id: 7, layout: 'auto',
+      title: '전진 끝에 닿으면 스스로 되돌아오게 하라',
+      goal: '버튼을 눌렀다 놓아도 실린더가 전진을 계속하고, 「전진 끝단에 실제로 도달한 것을 확인한 뒤」 ' +
+        '스스로 되돌아와야 한다. 도중에 무언가에 걸렸다면 되돌아오면 안 된다.',
+      fixed: { cyl: 'cylD', valve: 'v52mem' },
+      slots: [
+        { key: 'sensor', label: '복귀 신호를 만들 것', pick: ['none', 'limitV', 'seqV'] }
+      ],
+      need: { sensor: 'limitV' },
+      hint: '「끝까지 갔다」를 무엇으로 알아낼 것인가. 압력이 올라간 것과 로드가 그 자리에 온 것은 같은 말이 아니다.'
+    },
+    {
+      id: 8, layout: 'hold',
+      title: '손을 놓아도 나간 채로 있게 하라',
+      goal: '기동 버튼을 눌렀다 「놓아도」 로드가 나간 자리에 그대로 있어야 하고, ' +
+        '정지 버튼을 눌러야 비로소 되돌아와야 한다.',
+      slots: [
+        { key: 'master', label: '마스터 밸브', pick: ['v52', 'v52mem'] }
+      ],
+      fixed: { cyl: 'cylD' },
+      need: { master: 'v52mem' },
+      hint: '신호가 사라진 뒤에도 밸브가 그 자리에 남아 있어야 한다. 밸브를 원위치로 되돌리는 것이 무엇인지 보라.'
+    },
+
+    /* ── 유압 ── 근거 : 훈련교재 「공유압제어실기」 Ⅱ부 제2장 속도 제어 회로 ── */
+    {
+      id: 9, layout: 'hyd',
+      title: '유압 — 드릴 이송 속도를 일정하게 하라',
+      goal: '드릴로 눌러 내리는 작업이다. 부하가 실린더를 「밀어 누르는 방향(압축 하중)」이고 ' +
+        '깎이는 정도에 따라 하중이 변한다. 그래도 이송 속도가 일정해야 한다.',
+      fixed: { cyl: 'cylD', valve: 'v42' },
+      slots: [
+        { key: 'fc', label: '유량 조절 밸브를 어디에', pick: ['none', 'metIn', 'metOut2', 'bleed'] }
+      ],
+      need: { fc: 'metIn' },
+      hint: '기름은 공기와 달리 눌러도 거의 줄지 않는다. 공압에서 들어가는 쪽을 조이면 튀었던 이유가 무엇이었는지 떠올려 보라.'
+    },
+    {
+      id: 10, layout: 'hyd',
+      title: '유압 — 끌어당기는 부하에서 폭주를 막아라',
+      goal: '로드를 「잡아당기는 방향(인장 하중)」으로 무거운 것이 매달려 있다. ' +
+        '실린더가 부하에 끌려 제멋대로 튀어 나가지 않고 일정한 속도로 움직여야 한다.',
+      fixed: { cyl: 'cylD', valve: 'v42' },
+      slots: [
+        { key: 'fc', label: '유량 조절 밸브를 어디에', pick: ['none', 'metIn', 'metOut2', 'bleed'] }
+      ],
+      need: { fc: 'metOut2' },
+      hint: '부하가 끌어당기면 실린더는 스스로 달아나려 한다. 달아나려는 쪽에서 「버텨 주는 압력」을 만들어야 한다.'
+    },
+    {
+      id: 11, layout: 'hyd',
+      title: '유압 — 동력 손실과 발열을 줄여라',
+      goal: '연삭기 테이블 이송처럼 「하중이 안정된」 작업이다. 속도 제어의 정밀도보다 ' +
+        '기름이 뜨거워지지 않고 동력이 덜 버려지는 것이 중요하다.',
+      fixed: { cyl: 'cylD', valve: 'v42' },
+      slots: [
+        { key: 'fc', label: '유량 조절 밸브를 어디에', pick: ['none', 'metIn', 'metOut2', 'bleed'] }
+      ],
+      need: { fc: 'bleed' },
+      hint: '미터 인과 미터 아웃은 남는 기름을 릴리프 밸브로 흘려보낸다. 그 기름이 어디서 열이 되는지 생각해 보라.'
     }
   ];
 
@@ -214,10 +288,103 @@
     return r;
   }
 
+  /* ── 자동 왕복 (제3장) ─────────────────────────────────
+     복귀 신호를 무엇으로 만드느냐에 따라 「언제」 되돌아오는지가 달라진다. */
+  function simulateAuto(m, parts, base) {
+    var sn = parts.sensor, r = base;
+    r.latched = true;                       // 메모리 밸브라 버튼을 놓아도 전진을 유지한다
+    if (sn === 'limitV') {
+      r.autoReturn = 'pos'; r.ok = true;
+      r.say = '리밋 밸브. 전진 끝단에 세워 둔 롤러를 로드가 눌러야 복귀 신호가 나간다. ' +
+              '「실린더가 정말 거기까지 갔다」를 확인한 뒤에 되돌아오므로, 도중에 걸리면 되돌아오지 않고 그 자리에 선다. ' +
+              '자동 왕복 회로의 가장 일반적인 방법이다.';
+    } else if (sn === 'seqV') {
+      r.autoReturn = 'press'; r.ok = false;
+      r.say = '시퀀스 밸브. 압력이 정해 둔 값에 이르면 복귀 신호를 낸다. 전진 끝에 닿아도 압력이 오르니 ' +
+              '되돌아오기는 한다. 그러나 <b>도중에 무언가에 걸려도</b> 압력이 올라 되돌아와 버린다 — ' +
+              '끝까지 갔는지 아닌지를 구별하지 못한다. 과제는 도달을 확인하라는 것이었다.';
+    } else {
+      r.autoReturn = null; r.ok = false;
+      r.say = '복귀 신호를 만들 것을 넣지 않았다. 메모리 밸브는 마지막 신호를 기억하므로, ' +
+              '반대쪽에 신호를 주지 않는 한 로드가 나간 채로 그대로 서 있다.';
+    }
+    return r;
+  }
+
+  /* ── 자기유지 (제4장) ─────────────────────────────────── */
+  function simulateHold(m, parts, base) {
+    var v = parts.master, r = base;
+    if (v === 'v52mem') {
+      r.latched = true; r.ok = true;
+      r.say = '메모리 밸브(양쪽 파일럿 · 스프링 없음). 기동 신호로 밀려간 자리에 그대로 머물러 ' +
+              '손을 놓아도 전진 상태를 기억한다. 정지 버튼으로 반대쪽에 신호를 주어야 되돌아온다. ' +
+              '이렇게 신호를 기억하게 만든 회로를 자기유지 회로라 한다.';
+    } else {
+      r.latched = false; r.ok = false;
+      r.say = '스프링 복귀형 5/2 밸브다. 기동 신호가 사라지는 순간 내장된 스프링이 밸브를 원위치로 되돌려 ' +
+              '로드도 곧바로 따라 돌아온다. 눌러야만 나가 있으므로 기억하지 못한다.';
+    }
+    return r;
+  }
+
+  /* ── 유압 속도 제어 (Ⅱ부 제2장) ─────────────────────────
+     같은 미터 인이라도 공압(과제 3)과 유압에서 결과가 다르다. 그 대비가 이 과제의 핵심이다. */
+  function simulateHyd(m, parts, base) {
+    var f = parts.fc, r = base;
+    r.hyd = true; r.ok = false;
+    if (f === 'metIn') {
+      r.fwd = 0.4;
+      r.ok = (m.id === 9);
+      r.say = m.id === 9
+        ? '미터 인. 실린더로 <b>들어가는</b> 기름을 조였다. 기름은 공기와 달리 눌러도 거의 줄지 않아서 ' +
+          '공압처럼 튀지 않는다. 그래서 유압에서는 미터 인이 정상적인 방법이고, 드릴 이송처럼 ' +
+          '부하가 밀어 누르는(압축 하중) 작업에서 일정한 속도를 얻는 데 쓴다.'
+        : (m.id === 10
+          ? '미터 인은 들어가는 쪽만 조인다. 나오는 쪽이 열려 있어 부하가 로드를 끌어당기면 ' +
+            '실린더가 부하에 끌려 <b>달아나 버린다</b>(폭주). 인장 하중에는 쓸 수 없다.'
+          : '미터 인도 속도는 잡힌다. 다만 남는 기름이 릴리프 밸브를 통해 탱크로 돌아가므로 ' +
+            '그만큼 동력이 버려지고 기름이 뜨거워진다. 과제는 그 손실을 줄이라는 것이었다.');
+      if (m.id === 10) { r.runaway = true; r.fwd = 2.6; }
+    } else if (f === 'metOut2') {
+      r.fwd = 0.4;
+      r.ok = (m.id === 10);
+      r.say = m.id === 10
+        ? '미터 아웃. 실린더에서 <b>나오는</b> 기름을 조였다. 빠져나가지 못한 기름이 로드 쪽에서 ' +
+          '버텨 주는 압력(배압)이 되어, 부하가 끌어당겨도 피스톤이 폭주하지 않고 일정한 속도를 지킨다. ' +
+          '인장 하중을 받는 실린더의 표준 방법이다.'
+        : (m.id === 9
+          ? '미터 아웃으로도 속도는 잡힌다. 다만 이 과제의 부하는 밀어 누르는 압축 하중이라 ' +
+            '폭주할 일이 없다. 교재는 이런 조건에서는 들어가는 쪽을 조이는 방법을 든다.'
+          : '미터 아웃도 남는 기름을 릴리프 밸브로 흘려보낸다. 동력 손실과 발열은 그대로다.');
+    } else if (f === 'bleed') {
+      r.fwd = 0.55;
+      r.ok = (m.id === 11);
+      r.say = m.id === 11
+        ? '블리드 오프. 유량 조절 밸브를 실린더와 <b>병렬</b>로 달아, 남는 기름을 릴리프 밸브를 거치지 않고 ' +
+          '곧바로 탱크로 돌려보낸다. 그래서 동력 손실과 발열이 적다. 다만 펌프 토출량이 부하 압력에 ' +
+          '휘둘려 속도 제어의 정확도는 미터 인·미터 아웃보다 떨어진다. 하중이 안정된 연삭기 테이블 이송 ' +
+          '같은 곳에 알맞다.'
+        : '블리드 오프는 남는 기름만 빼돌리는 방식이라 열은 덜 나지만, 부하가 변하면 실린더 속도가 함께 흔들린다. ' +
+          '이 과제는 하중이 변하는 조건에서 <b>일정한 속도</b>를 요구했다.';
+      if (m.id !== 11) r.wobble = true;
+    } else {
+      r.say = '유량 조절 밸브를 넣지 않았다. 펌프가 내보내는 기름이 그대로 들어가 실린더가 빠르게 움직인다.';
+      if (m.id === 10) { r.runaway = true; r.fwd = 3.0; r.say += ' 게다가 부하가 끌어당겨 폭주한다.'; }
+    }
+    return r;
+  }
+
   function run(m, parts) {
+    /* 자기유지 과제는 고른 마스터 밸브가 곧 방향제어밸브다 */
+    if (m.layout === 'hold' && parts.master) {
+      parts = Object.assign({}, parts, { valve: parts.master });
+    }
     var base = simulate(m, parts);
     if (m.layout === 'speed') base = simulateSpeed(m, parts, base);
     if (m.layout === 'logic') base = simulateLogic(m, parts, base);
+    if (m.layout === 'auto')  base = simulateAuto(m, parts, base);
+    if (m.layout === 'hold')  base = simulateHold(m, parts, base);
+    if (m.layout === 'hyd')   base = simulateHyd(m, parts, base);
     /* 회로는 돌아가지만 과제가 요구한 부품이 아닌 경우 */
     if (base.ok && m.strict) {
       var off = m.strict.filter(function (k) { return parts[k] !== m.need[k]; });
@@ -285,8 +452,20 @@
     g += pipe('pA', 'M172 92 V150', hiA);
     if (p.cyl !== 'cylS') g += pipe('pB', 'M338 92 V150', hiB);
 
-    /* 속도 제어 슬롯 */
-    if (m.layout === 'speed') {
+    /* 유압 유량 조절 — 미터 인은 A 관로, 미터 아웃은 B 관로에 붙는다 */
+    if (m.layout === 'hyd') {
+      var fc = parts.fc;
+      if (fc === 'metIn' || fc === 'metOut2') {
+        var fx = (fc === 'metIn') ? 126 : 292;
+        g += slotBox(fx, 150, 92, 48, '유량 조절', PARTS[fc].sym, 'fc', st.armed === 'fc');
+        if (fc === 'metIn') { g += pipe('pA2', 'M172 198 V236', hiA); g += pipe('pB2', 'M338 150 V236', hiB); }
+        else                { g += pipe('pA2', 'M172 150 V236', hiA); g += pipe('pB2', 'M338 198 V236', hiB); }
+      } else {
+        if (!fc || fc === 'none') g += slotBox(126, 150, 92, 48, '유량 조절', null, 'fc', st.armed === 'fc');
+        g += pipe('pA2', 'M172 150 V236', hiA);
+        g += pipe('pB2', 'M338 150 V236', hiB);
+      }
+    } else if (m.layout === 'speed') {
       var sSym = parts.speed && PARTS[parts.speed] ? PARTS[parts.speed].sym : null;
       var sx = (m.id === 4) ? 132 : 296;
       g += slotBox(sx, 150, 92, 48, '속도', sSym, 'speed', st.armed === 'speed');
@@ -298,9 +477,13 @@
     }
 
     /* 방향제어밸브 */
-    var vSym = p.valve && PARTS[p.valve] ? PARTS[p.valve].sym : null;
-    if (m.slots.some(function (s) { return s.key === 'valve'; })) {
-      g += slotBox(146, 236, 218, 74, '방향제어밸브', vSym, 'valve', st.armed === 'valve');
+    var vKey = m.layout === 'hold' ? 'master' : 'valve';
+    var vPick = m.layout === 'hold' ? parts.master : p.valve;
+    var vSym = vPick && PARTS[vPick] ? PARTS[vPick].sym : (p.valve && PARTS[p.valve] ? PARTS[p.valve].sym : null);
+    if (m.slots.some(function (s) { return s.key === vKey; })) {
+      g += slotBox(146, 236, 218, 74, m.layout === 'hold' ? '마스터 밸브' : '방향제어밸브',
+                   vPick && PARTS[vPick] ? PARTS[vPick].sym : null,
+                   vKey, st.armed === vKey);
     } else {
       g += '<rect x="146" y="236" width="218" height="74" rx="8" class="slotbox picked"/>' +
         embed(vSym, 150, 240, 210, 66);
@@ -308,9 +491,50 @@
 
     /* 공급 */
     g += pipe('pP', 'M255 310 V352', st.supply);
-    g += embed('frl', 196, 352, 76, 62);
-    g += embed('src-pne', 282, 352, 62, 62);
-    g += '<line x1="272" y1="383" x2="282" y2="383" class="pipe hi"/>';
+    if (m.layout === 'hyd') {
+      /* 유압 파워 유닛 — 펌프 + 압력 설정(릴리프) + 탱크
+         근거 : 훈련교재 「공유압」 제5장 제1절 압력 설정 회로 */
+      g += embed('pump-h', 196, 352, 62, 62);
+      g += embed('relief', 268, 352, 62, 62);
+      g += '<line x1="258" y1="383" x2="268" y2="383" class="pipe hi"/>';
+      g += '<text x="227" y="424" text-anchor="middle" font-size="11" class="lbl">유압 펌프</text>';
+      g += '<text x="299" y="424" text-anchor="middle" font-size="11" class="lbl">릴리프 밸브</text>';
+      /* 블리드 오프 — 펌프 토출부에서 병렬로 갈라져 탱크로.
+         고른 경우에만 그린다(빈 자리를 둘씩 보여 주지 않는다). */
+      if (parts.fc === 'bleed') {
+        g += slotBox(384, 236, 116, 74, '유량 조절', PARTS.bleed.sym, 'fc', st.armed === 'fc');
+        g += pipe('pBleed', 'M364 273 H384', 'hi');
+        g += '<text x="442" y="326" text-anchor="middle" font-size="11" class="lbl">남는 기름 → 탱크</text>';
+      }
+    } else {
+      g += embed('frl', 196, 352, 76, 62);
+      g += embed('src-pne', 282, 352, 62, 62);
+      g += '<line x1="272" y1="383" x2="282" y2="383" class="pipe hi"/>';
+    }
+
+    /* 자동 왕복 — 복귀 신호를 만드는 것을 전진 끝단 쪽에 놓는다 */
+    if (m.layout === 'auto') {
+      var snSym = parts.sensor && PARTS[parts.sensor] ? PARTS[parts.sensor].sym : null;
+      g += slotBox(384, 150, 116, 74, '복귀 신호', snSym, 'sensor', st.armed === 'sensor');
+      var trip = (parts.sensor === 'limitV') ? (st.pos > 0.96) : (parts.sensor === 'seqV' ? !!st.pressUp : false);
+      g += pipe('pS', 'M442 132 V150', trip ? 'hi' : 'off');
+      g += '<line x1="442" y1="112" x2="442" y2="132" class="pipe ' + (trip ? 'hi' : 'off') + '"/>';
+      g += '<text x="442" y="240" text-anchor="middle" font-size="11" class="lbl">' +
+        (parts.sensor === 'limitV' ? '전진 끝단' : (parts.sensor === 'seqV' ? '압력 검출' : '')) + '</text>';
+      g += pipe('pSm', 'M384 187 H364', trip ? 'hi' : 'off');
+      g += '<text x="44" y="374" text-anchor="middle" font-size="12" class="lbl">기동</text>';
+      g += pipe('pB1', 'M44 310 V356', st.b1 ? 'hi' : 'off');
+    }
+
+    /* 자기유지 — 기동과 정지 두 버튼 */
+    if (m.layout === 'hold') {
+      g += pipe('pB1', 'M44 310 V356', st.b1 ? 'hi' : 'off');
+      g += pipe('pB2', 'M452 310 V356', st.b2 ? 'hi' : 'off');
+      g += pipe('pL1', 'M44 273 H146', st.b1 ? 'hi' : 'off');
+      g += pipe('pL2', 'M364 273 H452 V310', st.b2 ? 'hi' : 'off');
+      g += '<text x="44" y="374" text-anchor="middle" font-size="12" class="lbl">기동</text>';
+      g += '<text x="452" y="374" text-anchor="middle" font-size="12" class="lbl">정지</text>';
+    }
 
     /* 논리 밸브 */
     if (m.layout === 'logic') {
