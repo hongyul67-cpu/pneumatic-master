@@ -151,6 +151,10 @@
 <script src="learn.js"></script>
 <script src="quiz.js"></script>
 <script src="circuit.js"></script>
+<!-- 수업 슬라이드 — 원고(lesson.js)는 이 저장소 것, 화면(board-pro.js)은 links 의 공용 파일이다.
+     저장소마다 사본을 두면 뷰어가 갈라진다. 여기서 고치지 말고 links 쪽을 고친다. -->
+<script src="lesson.js"></script>
+<script src="https://hongyul67-cpu.github.io/links/board-pro.js"></script>
 <script>
 /* ══════════════════════════════════════════════════════════════
    공유압 마스터 — 화면
@@ -203,9 +207,50 @@ function render(view) {
   if (view === 'wrong')    return renderWrong(v);
 }
 
+/* ══ 수업 슬라이드 (선생님용) ════════════════════════════
+   원고는 lesson.js, 화면은 links 의 공용 board-pro.js 다.
+   배우기(LEARN)는 학생이 혼자 폰으로 읽는 것이고 이쪽은 교실 앞에 띄우는 것이라
+   둘은 별개의 덱이다 — 배우기를 지우거나 줄이지 않았다.
+   그림은 lesson.js 의 LESSFIG[키]() 가 symbols.js 의 SVG 를 그대로 불러 쓴다. */
+function openBoard() {
+  if (!window.BoardPro || !(window.LESSON || []).length) {
+    alert('수업 슬라이드를 불러오지 못했습니다. 잠시 뒤 새로고침해 주세요.'); return;
+  }
+  var ALL = window.LESSON, LF = window.LESSFIG || {}, units = [];
+  ALL.forEach(function (s) { if (units.indexOf(s.u) < 0) units.push(s.u); });
+
+  var menu = units.map(function (u) {
+    var list = ALL.filter(function (s) { return s.u === u; });
+    return { icon: '🔧', title: u, desc: '슬라이드 ' + list.length + '장 · ' + list[0].t,
+             run: { kind: 'lesson', deck: list } };
+  });
+  menu.push({ icon: '📚', wide: true, title: '전체 이어서 (' + ALL.length + '장)',
+              desc: '1단원부터 유압 회로까지 순서대로 진행합니다.',
+              run: { kind: 'lesson', deck: ALL } });
+  menu.push({ icon: '⬜', wide: true, title: '빈 칠판',
+              desc: '슬라이드 없이 판서만. 회로를 직접 그려 설명할 때.',
+              run: { kind: 'blank' } });
+
+  BoardPro.open({
+    title: '📽️ 공유압 · 수업 슬라이드',
+    sub: '요점 → <b>발문</b> → 퀴즈 → 정답을 하나씩 엽니다. 화면 어디든 바로 판서됩니다.<br>' +
+         '요점 속 <b>파란 빈칸</b>은 눌러야 답이 보입니다.',
+    menu: menu,
+    fig: function (s) { return (s.fig && LF[s.fig]) ? LF[s.fig]() : ''; }
+  });
+}
+
 /* ══ 배우기 ══════════════════════════════════════════════ */
 var learnUnit = 0;
 function renderLearn(v) {
+  /* 선생님용 입구 — 학생이 혼자 읽는 배우기 카드는 그대로 두고,
+     같은 내용을 교실 화면용 슬라이드로 한 벌 더 연다. */
+  var bd = el('<div class="card" style="text-align:center;padding:8px">' +
+    '<button type="button" id="openBoard" style="background:none;border:none;' +
+    'color:var(--dim);font-size:.85rem;cursor:pointer">📽️ 수업 슬라이드 열기 (선생님용) →</button></div>');
+  bd.querySelector('#openBoard').onclick = openBoard;
+  v.appendChild(bd);
+
   var nav = el('<div class="unitnav"></div>');
   LEARN_UNITS.forEach(function (u, i) {
     var b = el('<button' + (i === learnUnit ? ' class="on"' : '') + '>' + esc(u) + '</button>');
@@ -856,7 +901,6 @@ render('learn');
 <script src="https://hongyul67-cpu.github.io/links/collector.js"  data-tool="공유압 마스터"></script>
 <script src="https://hongyul67-cpu.github.io/links/fx.js"></script>
 <script src="https://hongyul67-cpu.github.io/links/rank.js"       data-tool="공유압 마스터" data-pace="class"></script>
-<script src="https://hongyul67-cpu.github.io/links/class-mode.js"></script>
 <script src="https://hongyul67-cpu.github.io/links/reset.js"></script>
 <script src="https://hongyul67-cpu.github.io/links/backbar.js"></script>
 </body>
