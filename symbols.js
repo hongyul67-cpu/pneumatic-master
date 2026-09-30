@@ -466,8 +466,10 @@
   function pcv(pilotFrom, arrowOffsetLeft, x0) {
     var x = (x0 === undefined ? 28 : x0), g = sq(x);
     var m = BY + BH / 2;
-    // 화살표는 칸 안에서 한쪽으로 치우쳐 있다 (압력제어밸브의 도시 규칙)
-    var ax = arrowOffsetLeft ? x + 9 : x + 19;
+    // 평소 닫힘(릴리프·시퀀스·언로드·카운터 밸런스) — 화살표가 포트 줄에서 한쪽으로 비껴 있다
+    // 평소 열림(감압) — 화살표가 포트 줄 위에 곧게 놓여 입구와 출구를 잇는다
+    // (2026-09-30 그림09: 예전에는 감압도 x+19 로 비껴 있어 「닫힘」처럼 보였다)
+    var ax = arrowOffsetLeft ? x + 9 : x + 14;
     g += arrow(ax, BY + BH - 3, ax, BY + 3);
     g += line(x + 14, BY + BH, x + 14, BY + BH + 12);
     g += line(x + 14, BY, x + 14, BY - 12);
@@ -532,7 +534,7 @@
   add('reducing-fixed', '압력제어밸브', '감압 밸브', '정비례식',
     '스프링으로 값을 맞추는 것이 아니라 넓이가 다른 두 피스톤의 면적 비로 압력이 정해진다. ' +
     '들어오는 압력이 달라져도 나가는 압력은 늘 정해진 비율만큼 낮다. 스프링 대신 계단 모양 피스톤을 그린다.',
-    W(sq(28) + arrow(47, 41, 47, 19) + line(42, 44, 42, 56) + line(42, 16, 42, 4) +
+    W(sq(28) + arrow(42, 41, 42, 19) + line(42, 44, 42, 56) + line(42, 16, 42, 4) +
       line(42, 8, 20, 8, ' stroke-dasharray="3 3"') + line(20, 8, 20, 30, ' stroke-dasharray="3 3"') +
       line(20, 30, 28, 30, ' stroke-dasharray="3 3"') +
       '<rect x="56" y="22" width="12" height="16"/><rect x="68" y="26" width="16" height="8"/>',

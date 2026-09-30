@@ -71,6 +71,7 @@
 | `learn.js` | 배우기 카드 (`LEARN`) |
 | `quiz.js` | 문항 (`QUESTIONS`) |
 | `circuit.js` | 회로 실습 과제와 동작 판정 (`MISSIONS` · `simulate`) |
+| `figs.js` | 배우기 그림 33장 (`FIGS`). 공용 [links/fig.js](https://hongyul67-cpu.github.io/links/fig.js) 로 그린다. 배우기 카드(`learn.js` 의 `P('키')` 자리)와 수업 슬라이드(`lesson.js` 의 `shared('키')`)가 같은 그림을 쓴다 |
 | `index.html` | 화면. 내용은 위 네 파일에 있습니다 |
 
 규약은 [links/CONVENTIONS.md](https://github.com/hongyul67-cpu/links/blob/master/CONVENTIONS.md) 입니다.

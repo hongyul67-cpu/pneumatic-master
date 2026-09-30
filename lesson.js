@@ -7,7 +7,8 @@
 
    근거 자료
      · learn.js (배우기 35장 · 8단원) — 이 저장소의 원고
-     · symbols.js — KS B 0054 / ISO 1219-1 기호 107개. 그림은 전부 여기서 가져다 쓴다
+     · symbols.js — KS B 0054 / ISO 1219-1 기호 107개. 기호 그림은 여기서 가져다 쓴다
+     · figs.js — 직접 그린 그림 33장. 배우기 카드와 같은 그림을 슬라이드 16장이 함께 쓴다
      · 공유압 기호.hwp (학교 수업 자료) — 명칭·비고
      · 산업인력공단 훈련교재 「공유압」 제3장·제5장, 「공유압제어실기」 (공공누리 제4유형)
        — 7단원(공기압 회로)·9단원(유압 회로)의 용어와 순서
@@ -20,7 +21,7 @@
   'use strict';
 
   /* ── 그림 도우미 ───────────────────────────────────────────
-     기호 그림은 symbols.js 의 SVG 를 그대로 가져온다. 새로 그리지 않는다. */
+     기호 그림은 symbols.js 의 SVG 를 그대로 가져온다. 직접 그린 그림은 figs.js 에 있다(shared). */
   function sym(id) {
     var a = window.SYMBOLS || [];
     for (var i = 0; i < a.length; i++) if (a[i].id === id) return a[i];
@@ -47,29 +48,6 @@
       'gap:clamp(10px,2.4vw,34px);width:100%">' + h + '</div>';
   }
 
-  /* 직접 그리는 그림 — 배우기와 같은 도시 규칙 */
-  function draw(inner, vb, maxh) {
-    return '<svg viewBox="' + vb + '" xmlns="http://www.w3.org/2000/svg" ' +
-      'style="width:100%;max-height:' + (maxh || 40) + 'vh;color:#dbe6f5"><g fill="none" ' +
-      'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-      inner + '</g></svg>';
-  }
-  function T(x, y, s, sz, anchor) {
-    return '<text x="' + x + '" y="' + y + '" font-size="' + (sz || 13) + '" text-anchor="' +
-      (anchor || 'middle') + '" stroke="none" fill="currentColor" font-weight="700">' + s + '</text>';
-  }
-  function box(x, y, w, h, label) {
-    return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="5"/>' +
-      T(x + w / 2, y + h / 2 + 5, label, 13);
-  }
-  function ar(x1, y1, x2, y2) {
-    var dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy) || 1, a = 7, s = 0.5;
-    dx /= L; dy /= L;
-    var p1x = x2 - a * (dx * Math.cos(s) - dy * Math.sin(s)), p1y = y2 - a * (dx * Math.sin(s) + dy * Math.cos(s));
-    var p2x = x2 - a * (dx * Math.cos(-s) - dy * Math.sin(-s)), p2y = y2 - a * (dx * Math.sin(-s) + dy * Math.cos(-s));
-    return '<path d="M' + x1 + ' ' + y1 + 'L' + x2 + ' ' + y2 + '"/><path d="M' + p1x.toFixed(1) + ' ' +
-      p1y.toFixed(1) + 'L' + x2 + ' ' + y2 + 'L' + p2x.toFixed(1) + ' ' + p2y.toFixed(1) + '"/>';
-  }
   /* 표 — 슬라이드에서 비교는 표가 가장 빨리 읽힌다 */
   function tbl(head, rows) {
     var h = '<table style="width:100%;border-collapse:collapse;color:#dbe6f5;' +
@@ -90,34 +68,17 @@
     return h + '</table>';
   }
 
+  /* figs.js 의 그림 — 배우기 카드와 **같은 그림**을 부른다 (2026-09-30 그림09).
+     이 파일의 FIG 는 슬라이드 그림 모음이고, 공용 그리기 도구는 window.FIG 다. */
+  function shared(k) { return function () { return window.FIG ? window.FIG.svgOf(k) : ''; }; }
+
   /* ── FIG ─────────────────────────────────────────────────── */
   var FIG = {
 
     /* 1단원 */
-    flow: function () {
-      return draw(
-        box(4, 22, 74, 30, '공기압축기') + ar(78, 37, 96, 37) +
-        box(96, 22, 66, 30, '애프터쿨러') + ar(162, 37, 180, 37) +
-        box(180, 22, 60, 30, '공기탱크') + ar(240, 37, 258, 37) +
-        box(258, 22, 74, 30, '에어드라이어') + ar(332, 37, 350, 37) +
-        box(350, 22, 96, 30, '공기압 조정 유닛') +
-        ar(398, 52, 398, 74) +
-        box(350, 74, 96, 30, '방향제어밸브') + ar(350, 89, 300, 89) +
-        box(214, 74, 86, 30, '속도제어밸브') + ar(214, 89, 164, 89) +
-        box(70, 74, 94, 30, '실린더') +
-        T(225, 124, '만든다 → 식힌다 → 모은다 → 말린다 → 다듬는다 → 보낸다 → 조인다 → 일한다', 13),
-        '0 8 452 126', 38);
-    },
+    flow: shared('airpath'),
     frl: function () { return row(['filter-dr', 'reducing', 'lub', 'pgauge']); },
-    frlorder: function () {
-      return draw(
-        box(10, 26, 84, 34, '필터') + ar(94, 43, 116, 43) +
-        box(116, 26, 96, 34, '감압 밸브') + ar(212, 43, 234, 43) +
-        box(234, 26, 84, 34, '윤활기') +
-        T(52, 78, '먼지·물을 먼저', 12) + T(164, 78, '압력을 낮춰 일정하게', 12) +
-        T(276, 78, '기름 안개는 마지막', 12),
-        '0 12 328 78', 30);
-    },
+    frlorder: shared('frl'),
     silencer: function () { return row(['silencer', 'exh-port', 'quick-exh']); },
 
     /* 2단원 */
@@ -132,71 +93,18 @@
         ['새면', '소리만 난다', '기름이 흘러 더러워지고 불이 날 수 있다']
       ]);
     },
-    pascal: function () {
-      return draw(
-        '<rect x="20" y="60" width="90" height="40"/><rect x="150" y="30" width="120" height="70"/>' +
-        '<path d="M110 78h40"/><path d="M110 82h40"/>' +
-        '<rect x="30" y="46" width="24" height="16" fill="currentColor"/>' +
-        '<rect x="180" y="14" width="60" height="18" fill="currentColor"/>' +
-        ar(42, 30, 42, 44) + ar(210, 2, 210, 12) +
-        T(42, 24, 'F₁ 작은 힘', 13) + T(210, 118, 'A₂ 넓은 면적', 13) +
-        T(65, 118, 'A₁ 좁은 면적', 13) + T(210, 12, 'F₂ 큰 힘', 13) +
-        T(145, 140, 'p = F / A — 압력이 같으니 면적이 큰 쪽이 큰 힘을 낸다', 13),
-        '-6 -6 300 156', 40);
-    },
-    conti: function () {
-      return draw(
-        '<path d="M10 26h96l34 20v28l-34 20H10Z"/><path d="M140 46h130v28H140Z"/>' +
-        ar(34, 60, 78, 60) + ar(196, 60, 216, 60) +
-        T(56, 52, 'A₁ 넓다', 13) + T(206, 52, 'A₂ 좁다', 13) +
-        T(56, 98, '느리다', 12) + T(206, 98, '빠르다', 12) +
-        T(140, 124, 'A₁v₁ = A₂v₂ — 좁아지면 빨라진다', 13),
-        '0 14 280 122', 36);
-    },
-    bern: function () {
-      return draw(
-        '<path d="M10 26h96l34 20v28l-34 20H10Z"/><path d="M140 46h130v28H140Z"/>' +
-        '<circle cx="56" cy="12" r="9"/><path d="M56 21v5"/>' +
-        '<circle cx="206" cy="12" r="9"/><path d="M206 21v5"/>' +
-        ar(34, 60, 78, 60) + ar(196, 60, 216, 60) +
-        T(56, 98, '느리다 · 압력 높다', 12) + T(206, 98, '빠르다 · 압력 낮다', 12) +
-        T(140, 124, 'p + ½ρv² + ρgh = 일정', 14),
-        '0 0 280 132', 38);
-    },
+    pascal: shared('pascal'),
+    conti: shared('conti'),
+    bern: shared('bern'),
 
     /* 3단원 */
     cyls: function () { return row(['cyl-s-push', 'cyl-s-spring', 'cyl-s-pull']); },
     cyld: function () { return row(['cyl-d', 'cyl-d-both', 'cyl-d-cush']); },
-    force: function () {
-      return draw(
-        '<rect x="30" y="30" width="150" height="60"/>' +
-        '<rect x="96" y="30" width="9" height="60" fill="currentColor"/>' +
-        '<path d="M105 60h95"/>' +
-        ar(46, 60, 88, 60) + T(66, 52, 'p', 13) +
-        T(64, 108, '전진 — 피스톤 전체 면적', 12) +
-        '<rect x="230" y="30" width="150" height="60"/>' +
-        '<rect x="296" y="30" width="9" height="60" fill="currentColor"/>' +
-        '<path d="M305 60h95"/>' +
-        ar(390, 60, 320, 60) + T(360, 52, 'p', 13) +
-        T(300, 108, '후진 — 피스톤 면적 − 로드 면적', 12) +
-        T(215, 132, 'F = p × A · 편로드는 후진 힘이 늘 작다', 14),
-        '20 14 396 128', 38);
-    },
+    force: shared('force'),
     pair: function () { return row([['v32nc', '3/2 way — 단동 실린더의 짝'], ['v52', '5/2 way — 복동 실린더의 짝']]); },
 
     /* 4단원 */
-    ports: function () {
-      return draw(
-        '<rect x="40" y="26" width="62" height="62"/><rect x="102" y="26" width="62" height="62"/>' +
-        '<path d="M56 88v20M102 88v20M148 26v-20"/>' +
-        ar(118, 76, 148, 38) + '<path d="M129 76v-9m-6 9h12"/>' +
-        ar(56, 76, 72, 38) + '<path d="M87 76v-9m-6 9h12"/>' +
-        T(72, 16, '위치 1', 13) + T(132, 16, '위치 2', 13) +
-        T(56, 124, '포트 1', 12) + T(102, 124, '포트 3', 12) + T(182, 14, '포트 2', 12) +
-        T(102, 148, '칸 2개 · 포트 3개 → 3/2 way 밸브', 14) +
-        T(102, 168, '포트는 한 칸만 센다', 12),
-        '-10 -6 232 180', 42);
-    },
+    ports: shared('ports'),
     porttbl: function () {
       return tbl(['번호', '이름', '무슨 구멍인가'], [
         ['1 (P)', '공급', '압축공기가 들어오는 곳'],
@@ -211,20 +119,7 @@
 
     /* 5단원 */
     thr: function () { return row([['throttle', '교축 밸브 — 양쪽 다 느려진다'], ['flowctl-one', '일방향 유량 조절 — 한쪽만 느려진다']]); },
-    meter: function () {
-      return draw(
-        T(150, 14, '미터 인 — 들어가는 쪽을 조인다', 14) +
-        '<rect x="40" y="30" width="160" height="46"/><rect x="120" y="30" width="9" height="46" fill="currentColor"/>' +
-        '<path d="M129 53h90"/><path d="M40 53H16"/><path d="M200 53h24"/>' +
-        '<circle cx="10" cy="53" r="9"/>' + T(10, 57, '조임', 9) +
-        T(140, 96, '앞쪽 공기가 눌린 채 남아 있다 → 부하가 사라지면 튀어 나간다', 12) +
-        T(150, 132, '미터 아웃 — 나오는 쪽을 조인다', 14) +
-        '<rect x="40" y="148" width="160" height="46"/><rect x="120" y="148" width="9" height="46" fill="currentColor"/>' +
-        '<path d="M129 171h90"/><path d="M40 171H16"/><path d="M200 171h24"/>' +
-        '<circle cx="232" cy="171" r="9"/>' + T(232, 175, '조임', 9) +
-        T(140, 214, '나가는 공기가 뒤에서 버텨 준다 → 속도가 고르다', 12),
-        '-4 0 300 224', 44);
-    },
+    meter: shared('meter'),
     quick: function () { return row([['quick-exh', '급속 배기 밸브'], ['silencer', '소음기 — 배기구에 끼운다']]); },
 
     /* 6단원 */
@@ -251,55 +146,12 @@
       ]);
     },
     ff: function () { return row([['v52mem', '양쪽 파일럿 — 스프링이 없다'], ['op-pilot', '파일럿 조작'], ['op-sol', '솔레노이드 조작']]); },
-    hold: function () {
-      return draw(
-        '<path d="M20 16v112"/><path d="M290 16v112"/>' +
-        '<path d="M20 44h44"/><path d="M92 44h68"/>' + T(78, 30, 'ON', 13) + '<path d="M64 48l28-12"/>' +
-        '<path d="M20 92h44"/><path d="M92 92h26"/><path d="M118 92V44"/>' +
-        T(78, 80, '자기 접점', 12) + '<path d="M64 96l28-12"/>' +
-        '<path d="M160 44h32"/>' + T(206, 30, 'OFF', 13) + '<path d="M192 48l28-12"/>' +
-        '<path d="M220 44h20"/><circle cx="260" cy="44" r="17"/>' + T(260, 50, 'K', 14) +
-        '<path d="M277 44h13"/>' +
-        T(155, 124, 'ON 과 자기 접점이 병렬 — 손을 떼도 K 가 붙어 있다', 13),
-        '0 6 310 130', 38);
-    },
-    delay: function () {
-      return draw(
-        ar(4, 52, 38, 52) + T(22, 38, '신호', 12) +
-        '<path d="M38 32h42v40H38Z"/><path d="M51 40q9 12 0 24"/><path d="M67 40q-9 12 0 24"/>' +
-        T(59, 90, '교축', 12) + '<path d="M80 52h26"/>' +
-        '<rect x="106" y="34" width="56" height="36" rx="10"/>' + T(134, 58, '탱크', 13) +
-        T(134, 90, '채우는 데 시간이 든다', 11) +
-        '<path d="M162 52h26"/>' +
-        '<rect x="188" y="32" width="42" height="40"/>' + T(209, 58, '3/2', 13) +
-        ar(230, 52, 268, 52) + T(250, 38, '출력', 12) +
-        T(134, 116, '시간을 정하는 것은 교축 나사다', 13),
-        '0 20 282 106', 34);
-    },
-    recip: function () {
-      return draw(
-        '<path d="M40 40h190v46H40Z"/><rect x="100" y="40" width="10" height="46" fill="currentColor"/>' +
-        '<path d="M110 63h120"/>' +
-        '<circle cx="40" cy="22" r="10"/>' + T(40, 8, '리밋 1', 12) + '<path d="M40 32v8"/>' +
-        '<circle cx="230" cy="22" r="10"/>' + T(230, 8, '리밋 2', 12) + '<path d="M230 32v8"/>' +
-        ar(120, 108, 220, 108) + ar(220, 130, 120, 130) +
-        T(170, 102, '전진 → 리밋 2 를 누른다', 12) +
-        T(170, 148, '후진 → 리밋 1 을 누른다', 12),
-        '0 -4 272 158', 40);
-    },
+    hold: shared('hold'),
+    delay: shared('delay'),
+    recip: shared('recip'),
 
     /* 9단원 */
-    set: function () {
-      return draw(
-        '<path d="M44 96h56"/><circle cx="32" cy="96" r="13"/>' + T(32, 126, '펌프', 12) +
-        '<path d="M100 58v74"/>' +
-        '<rect x="122" y="72" width="36" height="48"/>' + T(140, 100, 'P', 13) +
-        '<path d="M158 96h32"/>' + T(140, 62, '릴리프 밸브', 12) +
-        '<path d="M190 96v32h-32"/>' + T(206, 142, '탱크', 12) +
-        '<path d="M100 58h96"/>' + T(214, 52, '→ 회로로', 12) +
-        T(130, 166, '설정값을 넘으면 열려 남는 기름을 탱크로 보낸다', 13),
-        '10 40 250 136', 40);
-    },
+    set: shared('setp'),
     speed3: function () {
       return tbl(['회로', '유량 조절 밸브를 어디에', '어디에 쓰나'], [
         ['미터 인', '실린더로 <b>들어가는</b> 쪽', '부하가 <b>밀어 누르는</b> 쪽 — 드릴 이송'],
@@ -307,18 +159,10 @@
         ['블리드 오프', '실린더와 <b>병렬</b>로 펌프 토출부에', '하중이 안정된 곳 — 연삭·브로칭·호닝']
       ]);
     },
-    backp: function () {
-      return draw(
-        '<rect x="40" y="34" width="170" height="54"/>' +
-        '<rect x="130" y="34" width="10" height="54" fill="currentColor"/>' +
-        '<path d="M140 61h92"/>' +
-        ar(250, 61, 300, 61) + T(276, 48, '부하가 당긴다', 12) +
-        '<path d="M40 61H14"/>' + '<circle cx="238" cy="106" r="10"/>' + T(238, 110, '조임', 9) +
-        '<path d="M210 88v18h18"/>' +
-        T(90, 110, '배압이 남아 뒤에서 붙잡는다', 12) +
-        T(150, 142, '인장 하중에는 미터 아웃', 14),
-        '0 20 312 134', 38);
-    },
+    backp: shared('backp'),
+    boyle: shared('boyle'),
+    compress: shared('compress'),
+    unload: shared('unload'),
     airoil: function () {
       return tbl(['', '공기', '기름'], [
         ['눌렀을 때', '<b>줄어든다</b> (압축성)', '거의 안 줄어든다 (비압축성)'],
@@ -411,7 +255,7 @@
  anso:['5 cm 올라간다','2 cm 올라간다','50 cm 올라간다','10 cm 올라간다'], ansa:1,
  anse:'힘이 5배가 되는 만큼 거리는 1/5 이 된다. 10 ÷ 5 = <b>2 cm</b>.'},
 
-{u:'2. 공압과 유압의 차이', t:'보일의 법칙 — 공기는 눌린다',
+{u:'2. 공압과 유압의 차이', t:'보일의 법칙 — 공기는 눌린다', fig:'boyle',
  pts:['온도가 일정하면 <b>압력 × 부피 = 일정</b> 이다. ( p₁V₁ = p₂V₂ )',
       '보기 — 1기압에서 10 L 인 기체를 5기압에 두면 1 × 10 = 5 × V₂ → <b>{{2 L}}</b>',
       '공기가 이렇게 눌리기 때문에 공압 실린더는 중간에서 정확히 <b>멈추기 어렵다.</b>',
@@ -567,7 +411,7 @@
  anso:['실린더와 병렬','실린더로 들어가는 관','실린더에서 나오는 관','공기압축기 바로 뒤'], ansa:2,
  anse:'나오는(배기) 쪽을 조이는 것이 미터 아웃이다. 실린더와 병렬로 다는 것은 유압의 블리드 오프다.'},
 
-{u:'5. 속도 제어', t:'공압은 왜 미터 아웃이 표준인가',
+{u:'5. 속도 제어', t:'공압은 왜 미터 아웃이 표준인가', fig:'compress',
  pts:['미터 인은 실린더 앞쪽에 <b>눌린 공기</b> 가 그대로 남는다.',
       '부하가 사라지는 순간 그 공기가 스프링처럼 펴지며 <b>{{튀어 나간다}}</b> — 급진 현상.',
       '미터 아웃은 나가는 공기가 <b>뒤에서 버텨 주어</b> 속도가 고르다.',
@@ -721,7 +565,7 @@
  anso:['흐름 방향을 바꾼다','기름을 식힌다','속도를 늦춘다','회로의 최고 압력을 정한다'], ansa:3,
  anse:'설정값을 넘는 기름을 탱크로 흘려보내 최고 압력을 정한다. 없으면 압력이 계속 올라간다.'},
 
-{u:'9. 유압 회로', t:'일을 쉴 때 — 펌프 무부하 회로',
+{u:'9. 유압 회로', t:'일을 쉴 때 — 펌프 무부하 회로', fig:'unload',
  pts:['실린더가 멈춰 있어도 펌프는 돈다. 그 기름을 <b>높은 압력인 채</b> 흘려보내면 전부 <b>{{열}}</b> 이 된다.',
       '그래서 쉬는 동안에는 기름을 <b>낮은 압력</b> 으로 탱크에 그냥 돌려보낸다.',
       '좋은 점 — 동력이 덜 들고, 달아오르지 않고, 펌프가 오래 가고, 기름이 늦게 늙는다.',
